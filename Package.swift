@@ -27,8 +27,13 @@ let package = Package(
 			name: "ACMEClientModels",
 			targets: ["ACMEClientModels"],
 		),
+		.executable(
+			name: "acme-client",
+			targets: ["ACMEClientCLI"],
+		),
 	],
 	dependencies: [
+		.package(url: "https://github.com/apple/swift-argument-parser", from: "1.6.2"),
 		.package(url: "https://github.com/fizker/swift-extensions.git", from:"1.4.0"),
 	],
 	targets: [
@@ -39,6 +44,11 @@ let package = Package(
 			],
 			swiftSettings: upcomingFeatures,
 		),
+		.testTarget(
+			name: "ACMEClientTests",
+			dependencies: ["ACMEClient"],
+		),
+
 		.target(
 			name: "ACMEAPIModels",
 			dependencies: [
@@ -52,9 +62,13 @@ let package = Package(
 			],
 			swiftSettings: upcomingFeatures,
 		),
-		.testTarget(
-			name: "ACMEClientTests",
-			dependencies: ["ACMEClient"],
+
+		.executableTarget(
+			name: "ACMEClientCLI",
+			dependencies: [
+				"ACMEClient",
+				.product(name: "ArgumentParser", package: "swift-argument-parser"),
+			],
 		),
 	],
 )
