@@ -11,7 +11,7 @@ let upcomingFeatures: [SwiftSetting] = [
 ]
 
 let package = Package(
-	name: "swift-acme",
+	name: "swift-acme-client",
 	platforms: [
 		.iOS(.v15),
 		.macOS(.v12),
@@ -20,12 +20,12 @@ let package = Package(
 	],
 	products: [
 		.library(
-			name: "ACME",
-			targets: ["ACME"],
+			name: "ACMEClient",
+			targets: ["ACMEClient"],
 		),
 		.library(
-			name: "ACMEModels",
-			targets: ["ACMEModels"],
+			name: "ACMEClientModels",
+			targets: ["ACMEClientModels"],
 		),
 	],
 	dependencies: [
@@ -33,9 +33,9 @@ let package = Package(
 	],
 	targets: [
 		.target(
-			name: "ACME",
+			name: "ACMEClient",
 			dependencies: [
-				"ACMEModels",
+				"ACMEClientModels",
 			],
 			swiftSettings: upcomingFeatures,
 		),
@@ -46,15 +46,15 @@ let package = Package(
 			swiftSettings: upcomingFeatures,
 		),
 		.target(
-			name: "ACMEModels",
+			name: "ACMEClientModels",
 			dependencies: [
 				.product(name: "FzkExtensions", package: "swift-extensions"),
 			],
 			swiftSettings: upcomingFeatures,
 		),
 		.testTarget(
-			name: "ACMETests",
-			dependencies: ["ACME"],
+			name: "ACMEClientTests",
+			dependencies: ["ACMEClient"],
 		),
 	],
 )
