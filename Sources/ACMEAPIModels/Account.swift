@@ -13,6 +13,23 @@ struct Account: Codable {
 	/// The value "deactivated" should be used to indicate client-initiated deactivation
 	/// whereas "revoked" should be used to indicate server- initiated deactivation.
 	/// See [Section 7.1.6](https://datatracker.ietf.org/doc/html/rfc8555#section-7.1.6).
+	///
+	/// Account objects are created in the "valid" state, since no further
+	/// action is required to create an account after a successful `newAccount`
+	/// request.  If the account is deactivated by the client or revoked by
+	/// the server, it moves to the corresponding state.
+	///
+	/// ### State Transitions for Account Objects
+	/// ```
+	///                   valid
+	///                     |
+	///                     |
+	///         +-----------+-----------+
+	///  Client |                Server |
+	/// deactiv.|                revoke |
+	///         V                       V
+	///    deactivated               revoked
+	/// ```
 	var status: Status
 
 	/// An array of URLs that the server can use to contact the client for issues related to this account.
