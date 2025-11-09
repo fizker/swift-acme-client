@@ -40,6 +40,12 @@ let package = Package(
 			swiftSettings: upcomingFeatures,
 		),
 		.target(
+			name: "ACMEAPIModels",
+			dependencies: [
+			],
+			swiftSettings: upcomingFeatures,
+		),
+		.target(
 			name: "ACMEModels",
 			dependencies: [
 				.product(name: "FzkExtensions", package: "swift-extensions"),
