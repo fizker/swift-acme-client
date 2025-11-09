@@ -36,12 +36,15 @@ let package = Package(
 		.package(url: "https://github.com/apple/swift-argument-parser", from: "1.6.2"),
 		.package(url: "https://github.com/fizker/swift-extensions.git", from:"1.4.0"),
 		.package(url: "https://github.com/fizker/swift-macro-compile-safe-init", from: "1.0.0"),
+		.package(url: "https://github.com/swift-server/async-http-client.git", from: "1.29.1"),
 	],
 	targets: [
 		.target(
 			name: "ACMEClient",
 			dependencies: [
+				"ACMEAPIModels",
 				"ACMEClientModels",
+				.product(name: "AsyncHTTPClient", package: "async-http-client"),
 			],
 			swiftSettings: upcomingFeatures,
 		),
