@@ -59,6 +59,11 @@ let package = Package(
 			],
 			swiftSettings: upcomingFeatures,
 		),
+		.testTarget(
+			name: "ACMEAPIModelsTests",
+			dependencies: ["ACMEAPIModels"],
+		),
+
 		.target(
 			name: "ACMEClientModels",
 			dependencies: [
