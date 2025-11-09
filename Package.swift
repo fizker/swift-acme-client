@@ -35,6 +35,7 @@ let package = Package(
 	dependencies: [
 		.package(url: "https://github.com/apple/swift-argument-parser", from: "1.6.2"),
 		.package(url: "https://github.com/fizker/swift-extensions.git", from:"1.4.0"),
+		.package(url: "https://github.com/fizker/swift-macro-compile-safe-init", from: "1.0.0"),
 	],
 	targets: [
 		.target(
@@ -61,6 +62,13 @@ let package = Package(
 				.product(name: "FzkExtensions", package: "swift-extensions"),
 			],
 			swiftSettings: upcomingFeatures,
+		),
+		.testTarget(
+			name: "ACMEClientModelsTests",
+			dependencies: [
+				"ACMEClientModels",
+				.product(name: "CompileSafeInitMacro", package: "swift-macro-compile-safe-init"),
+			],
 		),
 
 		.executableTarget(
