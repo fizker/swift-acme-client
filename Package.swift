@@ -14,7 +14,7 @@ let package = Package(
 	name: "swift-acme-client",
 	platforms: [
 		.iOS(.v15),
-		.macOS(.v12),
+		.macOS(.v13),
 		.tvOS(.v15),
 		.watchOS(.v8),
 	],
@@ -34,9 +34,11 @@ let package = Package(
 	],
 	dependencies: [
 		.package(url: "https://github.com/apple/swift-argument-parser", from: "1.6.2"),
+		.package(url: "https://github.com/apple/swift-crypto.git", from: "4.1.0"),
 		.package(url: "https://github.com/fizker/swift-extensions.git", from:"1.4.0"),
 		.package(url: "https://github.com/fizker/swift-macro-compile-safe-init", from: "1.0.0"),
 		.package(url: "https://github.com/swift-server/async-http-client.git", from: "1.29.1"),
+		.package(url: "https://github.com/vapor/jwt-kit.git", from: "5.3.0"),
 	],
 	targets: [
 		.target(
@@ -45,6 +47,8 @@ let package = Package(
 				"ACMEAPIModels",
 				"ACMEClientModels",
 				.product(name: "AsyncHTTPClient", package: "async-http-client"),
+				.product(name: "JWTKit", package: "jwt-kit"),
+				.product(name: "Crypto", package: "swift-crypto"),
 			],
 			swiftSettings: upcomingFeatures,
 		),
