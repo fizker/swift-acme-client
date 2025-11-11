@@ -26,28 +26,44 @@ public actor ACMEClient {
 	}
 
 	public func account() async throws -> Account {
-		let locationRequest = try HTTPClientRequest(url: directory.newAccount.absoluteString) ~ {
-			$0.method = .POST
-			let data = try coder.encoder.encode(ExistingAccountRequest())
-			$0.body = .bytes(data)
-		}
+		let locationResponse = try await post(value: ExistingAccountRequest(), to: directory.newAccount)
 
-		let locationResponse = try await httpClient.execute(locationRequest, timeout: .seconds(30))
 		guard locationResponse.status == .ok || locationResponse.status == .noContent
 		else {
 			let problem = try await locationResponse.body.decode(using: coder) as ACMEProblem
 			throw problem
 		}
 
-		guard let accountURL = locationResponse.headers.first(name: "location")
+		guard let accountURL = locationResponse.headers.first(name: "location").flatMap(URL.init(string:))
 		else {
 			fatalError()
 		}
 
-		let accountRequest = HTTPClientRequest(url: accountURL)
-		let accountResponse = try await httpClient.execute(accountRequest, timeout: .seconds(30))
+		return try await get(from: accountURL)
+	}
 
-		return try await accountResponse.body.decode(using: coder)
+	func get<T: Decodable>(type: T.Type = T.self, from url: URL) async throws -> T {
+		let request = HTTPClientRequest(url: url.absoluteString)
+		let response = try await httpClient.execute(request, timeout: .seconds(30))
+
+		return try await response.body.decode(using: coder)
+	}
+
+	func post(value: some Encodable, to url: URL) async throws -> HTTPClientResponse {
+		let request = try HTTPClientRequest(url: directory.newAccount.absoluteString) ~ {
+			$0.method = .POST
+			let data = try coder.encoder.encode(value)
+			$0.body = .bytes(data)
+		}
+
+		let response = try await httpClient.execute(request, timeout: .seconds(30))
+		guard response.status == .ok || response.status == .noContent
+		else {
+			let problem = try await response.body.decode(using: coder) as ACMEProblem
+			throw problem
+		}
+
+		return response
 	}
 }
 
