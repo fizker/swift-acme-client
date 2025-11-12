@@ -43,42 +43,26 @@ public actor ACMEClient {
 	}
 
 	func get<T: Decodable>(type: T.Type = T.self, from url: URL) async throws -> T {
-		let request = HTTPClientRequest(url: url.absoluteString)
+		let request = HTTPClientRequest(url: url)
 		let response = try await httpClient.execute(request, timeout: .seconds(30))
 
 		return try await response.body.decode(using: coder)
 	}
 
 	func post(value: some Encodable, to url: URL) async throws -> HTTPClientResponse {
-		let request = try HTTPClientRequest(url: directory.newAccount.absoluteString) ~ {
+		let request = try HTTPClientRequest(url: directory.newAccount) ~ {
 			$0.method = .POST
 			let data = try coder.encoder.encode(value)
 			$0.body = .bytes(data)
 		}
 
 		let response = try await httpClient.execute(request, timeout: .seconds(30))
-		guard response.status == .ok || response.status == .noContent
+		guard response.status.isSuccess
 		else {
 			let problem = try await response.body.decode(using: coder) as ACMEProblem
 			throw problem
 		}
 
 		return response
-	}
-}
-
-extension HTTPClientResponse.Body {
-	func decode<T: Decodable>(using coder: Coder) async throws -> T {
-		let buffer = try await collect(upTo: `1mb`)
-		do {
-			return try coder.decoder.decode(T.self, from: buffer)
-		} catch {
-			let raw = String(buffer: buffer)
-			print("Failed to decode: \(raw)")
-			guard let problem = try? coder.decoder.decode(ACMEProblem.self, from: buffer)
-			else { throw error }
-
-			throw problem
-		}
 	}
 }
