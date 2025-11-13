@@ -49,5 +49,7 @@ public struct Account: Codable, Sendable {
 
 	/// A URL from which a list of orders submitted by this account can be fetched via a POST-as-GET request,
 	/// as described in [Section 7.1.2.1](https://datatracker.ietf.org/doc/html/rfc8555#section-7.1.2.1).
-	public var orders: URL
+	///
+	/// LetsEncrypt never returns a URL here. It is recommended to store URLs to any relevant orders manually.
+	public var orders: URL?
 }

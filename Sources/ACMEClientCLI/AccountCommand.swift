@@ -1,5 +1,7 @@
 import ACMEClient
 import ArgumentParser
+import Foundation
+import FzkExtensions
 
 struct AccountCommand: AsyncParsableCommand {
 	static let configuration = CommandConfiguration(
@@ -10,7 +12,13 @@ struct AccountCommand: AsyncParsableCommand {
 	@Option(name: .shortAndLong)
 	var directory: Directory
 
-	@Option(name: .shortAndLong, transform: { try .init(pemRepresentation: $0) })
+	@Option(name: .shortAndLong, transform: {
+		print("path: \($0)")
+		let data = try FileManager.default.contents(atPath: $0).unwrap()
+		let content = try String(data: data, encoding: .utf8).unwrap()
+		print("content: \(content)")
+		return try .init(pemRepresentation: content)
+	})
 	var accountKey: Key.Private
 
 	func run() async throws {
@@ -18,6 +26,9 @@ struct AccountCommand: AsyncParsableCommand {
 		let api = try await API(directory: directory.acme)
 		var nonce = try await api.fetchNonce()
 		let accountURL = try await api.fetchAccountURL(nonce: &nonce, accountKey: accountKey)
-		print("Account: \(accountURL, default: "No URL returned")")
+			.unwrap()
+		print("AccountURL: \(accountURL, default: "No URL returned")")
+		let account = try await api.fetchAccount(nonce: &nonce, accountKey: accountKey, accountURL: accountURL)
+		print("Account: \(account, default: "No Account returned")")
 	}
 }

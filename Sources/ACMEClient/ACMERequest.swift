@@ -16,6 +16,10 @@ struct ACMERequest: Encodable {
 	fileprivate var payload: String
 	fileprivate var signature: String
 
+	init(url: URL, nonce: Nonce, accountKey: Key.Private, accountURL: URL?, body: Never?) throws {
+		try self.init(url: url, nonce: nonce, accountKey: accountKey, accountURL: accountURL, body: nil as String?)
+	}
+
 	init(url: URL, nonce: Nonce, accountKey: Key.Private, accountURL: URL?, body: (some Encodable)?) throws {
 		self.url = url
 

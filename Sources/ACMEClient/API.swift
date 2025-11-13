@@ -60,8 +60,38 @@ package struct API {
 		return (accountURL, try response.nonce)
 	}
 
+	package func fetchAccount(nonce: inout Nonce, accountKey: Key.Private, accountURL: URL) async throws -> Account? {
+		let (account, newNonce) = try await fetchAccount(nonce: nonce, accountKey: accountKey, accountURL: accountURL)
+		nonce = newNonce
+		return account
+	}
+
+	package func fetchAccount(nonce: Nonce, accountKey: Key.Private, accountURL: URL) async throws -> (Account?, Nonce) {
+		let response = try await post(
+			try ACMERequest(
+				url: accountURL,
+				nonce: nonce,
+				accountKey: accountKey,
+				accountURL: accountURL,
+				body: nil,
+			)
+		)
+
+		guard response.status.isSuccess
+		else {
+			let problem = try await response.body.decode(using: coder) as ACMEProblem
+			throw problem
+		}
+
+		return (
+			try await response.body.decode(using: coder),
+			try response.nonce,
+		)
+	}
+
 	private func post(_ acmeRequest: ACMERequest) async throws -> HTTPClientResponse {
 		var request = HTTPClientRequest(url: acmeRequest.url)
+		request.headers.add(name: "content-type", value: "application/jose+json")
 		request.method = .POST
 		let data = try coder.encoder.encode(acmeRequest)
 		request.body = .bytes(data)
