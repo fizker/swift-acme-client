@@ -1,13 +1,30 @@
-import ACMEAPIModels
-import AsyncHTTPClient
-import Foundation
+package import ACMEAPIModels
+package import ACMEClientModels
+package import AsyncHTTPClient
+package import Foundation
 import FzkExtensions
 
-struct API {
+package struct API {
 	let httpClient: HTTPClient
 	let directory: Directory
 
-	func fetchNonce() async throws -> Nonce {
+	package init(httpClient: HTTPClient = .shared, directory: Directory) {
+		self.httpClient = httpClient
+		self.directory = directory
+	}
+
+	package init(httpClient: HTTPClient = .shared, directory: ACMEDirectory) async throws {
+		self.httpClient = httpClient
+		self.directory = try await Self.fetchDirectory(for: directory, using: httpClient)
+	}
+
+	package static func fetchDirectory(for acmeDirectory: ACMEDirectory, using httpClient: HTTPClient) async throws -> Directory {
+		let request = HTTPClientRequest(url: acmeDirectory.rawValue)
+		let response = try await httpClient.execute(request, timeout: .seconds(30))
+		return try await response.body.decode(using: coder)
+	}
+
+	package func fetchNonce() async throws -> Nonce {
 		let request = HTTPClientRequest(url: directory.newNonce) ~ {
 			$0.method = .HEAD
 		}
@@ -17,7 +34,13 @@ struct API {
 		return try response.nonce
 	}
 
-	func fetchAccountURL(nonce: Nonce, accountKey: Key.Private) async throws -> (URL?, Nonce) {
+	package func fetchAccountURL(nonce: inout Nonce, accountKey: Key.Private) async throws -> URL? {
+		let (accountURL, newNonce) = try await fetchAccountURL(nonce: nonce, accountKey: accountKey)
+		nonce = newNonce
+		return accountURL
+	}
+
+	package func fetchAccountURL(nonce: Nonce, accountKey: Key.Private) async throws -> (URL?, Nonce) {
 		let response = try await post(try ACMERequest(
 			url: directory.newAccount,
 			nonce: nonce,
