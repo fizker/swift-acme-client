@@ -1,3 +1,4 @@
+import CompileSafeInitMacro
 public import Foundation
 import FzkExtensions
 
@@ -43,8 +44,8 @@ extension ACMEDirectory: RawRepresentable {
 
 	public var rawValue: URL {
 		switch self {
-		case .letsEncryptV2Production: return URL(string: "https://acme-v02.api.letsencrypt.org/directory")!
-		case .letsEncryptV2Staging: return URL(string: "https://acme-staging-v02.api.letsencrypt.org/directory")!
+		case .letsEncryptV2Production: return #URL("https://acme-v02.api.letsencrypt.org/directory")
+		case .letsEncryptV2Staging: return #URL("https://acme-staging-v02.api.letsencrypt.org/directory")
 		case let .custom(url): return url
 		}
 	}
