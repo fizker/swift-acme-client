@@ -1,6 +1,7 @@
 public import ACMEAPIModels
 public import ACMEClientModels
 import AsyncHTTPClient
+public import Crypto
 import Foundation
 import FzkExtensions
 import NIOFoundationCompat
@@ -10,6 +11,12 @@ let `1mb` = 1024 * 1024
 struct Coder {
 	var decoder = JSONDecoder()
 	var encoder = JSONEncoder()
+}
+let coder = Coder()
+
+public enum Key {
+	public typealias Private = P256.Signing.PrivateKey
+	public typealias Public = P256.Signing.PublicKey
 }
 
 public actor ACMEClient {
