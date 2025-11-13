@@ -86,7 +86,7 @@ struct Order: Codable {
 	/// The error that occurred while processing the order, if any.
 	///
 	/// This field is structured as a problem document [RFC7807].
-	var error: ProblemDetails?
+	var error: ACMEProblem?
 
 	/// For pending orders, the authorizations that the client needs to complete before the requested
 	/// certificate can be issued (see Section 7.5), including unexpired authorizations that the client has

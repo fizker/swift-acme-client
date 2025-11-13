@@ -1,5 +1,5 @@
-struct Identifier: Codable {
-	enum `Type`: Codable {
+public struct Identifier: Codable, Equatable, Sendable {
+	public enum `Type`: Codable, Equatable, Sendable {
 		/// Any identifier of type "dns" in a newOrder request MAY have a
 		/// wildcard domain name as its value.
 		///
@@ -18,7 +18,7 @@ struct Identifier: Codable {
 		/// Catch-all for any types not yet known by this codebase.
 		case unknown(String)
 
-		func encode(to encoder: any Encoder) throws {
+		public func encode(to encoder: any Encoder) throws {
 			var container = encoder.singleValueContainer()
 			switch self {
 			case .dns: try container.encode("dns")
@@ -26,7 +26,7 @@ struct Identifier: Codable {
 			}
 		}
 
-		init(from decoder: any Decoder) throws {
+		public init(from decoder: any Decoder) throws {
 			let container = try decoder.singleValueContainer()
 			let value = try container.decode(String.self)
 			switch value {
@@ -39,8 +39,8 @@ struct Identifier: Codable {
 	/// The type of identifier.
 	///
 	/// This document defines the "dns" identifier type.  See the registry defined in Section 9.7.7 for any others.
-	var type: String
+	public var type: `Type`
 
 	/// The identifier itself.
-	var value: String
+	public var value: String
 }

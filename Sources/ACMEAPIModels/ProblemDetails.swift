@@ -1,3 +1,0 @@
-struct ProblemDetails: Codable {
-
-}

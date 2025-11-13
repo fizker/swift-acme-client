@@ -1,10 +1,10 @@
-import Foundation
+public import Foundation
 
 /// An ACME account resource represents a set of metadata associated with an account.
 ///
 /// https://datatracker.ietf.org/doc/html/rfc8555#section-7.1.2
-struct Account: Codable {
-	enum Status: String, Codable {
+public struct Account: Codable, Sendable {
+	public enum Status: String, Codable, Sendable {
 		case valid, deactivated, revoked
 	}
 
@@ -30,24 +30,26 @@ struct Account: Codable {
 	///         V                       V
 	///    deactivated               revoked
 	/// ```
-	var status: Status
+	public var status: Status
 
 	/// An array of URLs that the server can use to contact the client for issues related to this account.
 	///
 	/// For example, the server may wish to notify the client about server-initiated revocation or certificate expiration.
 	///
 	/// For information on supported URL schemes, see [Section 7.3](https://datatracker.ietf.org/doc/html/rfc8555#section-7.3).
-	var contact: [URL]?
+	public var contact: [URL]?
 
 	/// Including this field in a newAccount request, with a value of true, indicates the client's agreement with the terms of service.  This field cannot be updated by the client.
-	var termsOfServiceAgreed: Bool?
+	public var termsOfServiceAgreed: Bool?
 
 	/// Including this field in a newAccount request indicates approval by the holder of an existing non-ACME account to bind that account to this ACME account.
 	///
 	/// This field is not updateable by the client (see [Section 7.3.4](https://datatracker.ietf.org/doc/html/rfc8555#section-7.3.4)).
-	var externalAccountBinding: ExternalAccountBinding?
+	public var externalAccountBinding: ExternalAccountBinding?
 
 	/// A URL from which a list of orders submitted by this account can be fetched via a POST-as-GET request,
 	/// as described in [Section 7.1.2.1](https://datatracker.ietf.org/doc/html/rfc8555#section-7.1.2.1).
-	var orders: URL
+	///
+	/// LetsEncrypt never returns a URL here. It is recommended to store URLs to any relevant orders manually.
+	public var orders: URL?
 }
