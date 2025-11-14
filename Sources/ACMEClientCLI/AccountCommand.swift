@@ -1,29 +1,42 @@
+import ACMEAPIModels
 import ACMEClient
 import ArgumentParser
 import Foundation
 import FzkExtensions
 
+struct AccountOptions: ParsableArguments {
+	@Option(name: .shortAndLong)
+	var directory: Directory
+}
+
 struct AccountCommand: AsyncParsableCommand {
 	static let configuration = CommandConfiguration(
 		commandName: "account",
-		abstract: "Manage your account"
+		abstract: "Manage your account",
+		subcommands: [
+			FetchAccountCommand.self,
+		],
+	)
+}
+
+struct FetchAccountCommand: AsyncParsableCommand {
+	static let configuration = CommandConfiguration(
+		commandName: "fetch",
 	)
 
-	@Option(name: .shortAndLong)
-	var directory: Directory
+	@OptionGroup
+	var options: AccountOptions
 
 	@Option(name: .shortAndLong, transform: {
-		print("path: \($0)")
 		let data = try FileManager.default.contents(atPath: $0).unwrap()
 		let content = try String(data: data, encoding: .utf8).unwrap()
-		print("content: \(content)")
 		return try .init(pemRepresentation: content)
 	})
 	var accountKey: Key.Private
 
 	func run() async throws {
-		print("fetching account now: \(directory), \(directory.acme), \(directory.acme.rawValue)")
-		let api = try await API(directory: directory.acme)
+		print("fetching account now: \(options.directory), \(options.directory.acme), \(options.directory.acme.rawValue)")
+		let api = try await API(directory: options.directory.acme)
 		var nonce = try await api.fetchNonce()
 		let accountURL = try await api.fetchAccountURL(nonce: &nonce, accountKey: accountKey)
 			.unwrap()
@@ -31,4 +44,29 @@ struct AccountCommand: AsyncParsableCommand {
 		let account = try await api.fetchAccount(nonce: &nonce, accountKey: accountKey, accountURL: accountURL)
 		print("Account: \(account, default: "No Account returned")")
 	}
+}
+
+struct CreateAccountCommand: AsyncParsableCommand {
+	static let configuration = CommandConfiguration(
+		commandName: "create",
+	)
+
+	@OptionGroup
+	var options: AccountOptions
+
+	@Option(name: .shortAndLong, parsing: .singleValue, transform: parseEmailURL(value:))
+	var contact: [URL]
+
+	func run() async throws {
+		let request = NewAccountRequest(contact: contact, termsOfServiceAgreed: true, externalAccountBinding: nil)
+	}
+}
+
+func parseEmailURL(value: String) throws -> URL {
+	let emailRegex = /mailto:.+/
+	guard try emailRegex.firstMatch(in: value) != nil
+	else {
+		throw ValidationError("Expected a mailto: URL")
+	}
+	return try URL(string: value).unwrap()
 }
