@@ -89,6 +89,28 @@ package struct API {
 		)
 	}
 
+	package func createAccount(nonce: inout Nonce, accountKey: Key.Private, request: NewAccountRequest) async throws -> Account? {
+		let response = try await post(
+			ACMERequest(
+				url: directory.newAccount,
+				nonce: nonce,
+				accountKey: accountKey,
+				accountURL: nil,
+				body: request,
+			)
+		)
+
+		guard response.status.isSuccess
+		else {
+			let problem = try await response.body.decode(using: coder) as ACMEProblem
+			throw problem
+		}
+
+		nonce = try response.nonce
+
+		return try await response.body.decode(using: coder)
+	}
+
 	private func post(_ acmeRequest: ACMERequest) async throws -> HTTPClientResponse {
 		var request = HTTPClientRequest(url: acmeRequest.url)
 		request.headers.add(name: "content-type", value: "application/jose+json")
