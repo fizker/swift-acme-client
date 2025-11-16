@@ -34,13 +34,13 @@ package struct API {
 		return try response.nonce
 	}
 
-	package func fetchAccountURL(nonce: inout Nonce, accountKey: Key.Private) async throws -> URL? {
+	package func fetchAccountURL(nonce: inout Nonce, accountKey: Key.Private) async throws -> URL {
 		let (accountURL, newNonce) = try await fetchAccountURL(nonce: nonce, accountKey: accountKey)
 		nonce = newNonce
 		return accountURL
 	}
 
-	package func fetchAccountURL(nonce: Nonce, accountKey: Key.Private) async throws -> (URL?, Nonce) {
+	package func fetchAccountURL(nonce: Nonce, accountKey: Key.Private) async throws -> (URL, Nonce) {
 		let response = try await post(try ACMERequest(
 			url: directory.newAccount,
 			nonce: nonce,
@@ -55,7 +55,8 @@ package struct API {
 			throw problem
 		}
 
-		let accountURL = response.headers.first(name: "location").flatMap(URL.init(string:))
+		guard let accountURL = response.headers.first(name: "location").flatMap(URL.init(string:))
+		else { throw ACMEError.accountURLMissing }
 
 		return (accountURL, try response.nonce)
 	}
@@ -114,6 +115,29 @@ package struct API {
 				.flatMap(URL.init(string:))
 				.unwrap(orThrow: ACMEError.accountURLMissing),
 		)
+	}
+
+	@discardableResult
+	package func update(_ request: NewAccountRequest, nonce: inout Nonce, accountKey: Key.Private, accountURL: URL) async throws -> Account {
+		let response = try await post(
+			ACMERequest(
+				url: accountURL,
+				nonce: nonce,
+				accountKey: accountKey,
+				accountURL: accountURL,
+				body: request,
+			)
+		)
+
+		guard response.status.isSuccess
+		else {
+			let problem = try await response.body.decode(using: coder) as ACMEProblem
+			throw problem
+		}
+
+		nonce = try response.nonce
+
+		return try await response.body.decode(using: coder)
 	}
 
 	private func post(_ acmeRequest: ACMERequest) async throws -> HTTPClientResponse {

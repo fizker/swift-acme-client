@@ -31,6 +31,7 @@ struct AccountCommand: AsyncParsableCommand {
 		subcommands: [
 			CreateAccountKeyCommand.self,
 			CreateAccountCommand.self,
+			UpdateAccountCommand.self,
 			FetchAccountCommand.self,
 		],
 	)
@@ -70,8 +71,7 @@ struct FetchAccountCommand: AsyncParsableCommand {
 		let api = try await API(directory: options.directory.acme)
 		var nonce = try await api.fetchNonce()
 		let accountURL = try await api.fetchAccountURL(nonce: &nonce, accountKey: auth.accountKey)
-			.unwrap()
-		print("AccountURL: \(accountURL, default: "No URL returned")")
+		print("AccountURL: \(accountURL)")
 		let account = try await api.fetchAccount(nonce: &nonce, accountKey: auth.accountKey, accountURL: accountURL)
 		print("Account: \(account, default: "No Account returned")")
 	}
@@ -103,6 +103,40 @@ struct CreateAccountCommand: AsyncParsableCommand {
 
 		print("Account: \(account.account)")
 		print("URL: \(account.url)")
+	}
+}
+
+struct UpdateAccountCommand: AsyncParsableCommand {
+	static let configuration = CommandConfiguration(
+		commandName: "update",
+	)
+
+	@OptionGroup
+	var options: AccountOptions
+
+	@OptionGroup
+	var auth: AuthOptions
+
+	@Option(name: .shortAndLong, parsing: .singleValue, transform: parseEmailURL(value:))
+	var contact: [URL]
+
+	@Option(transform: { try URL(string: $0).unwrap() })
+	var accountURL: URL?
+
+	func run() async throws {
+		let request = NewAccountRequest(contact: contact)
+		let api = try await API(directory: options.directory.acme)
+		var nonce = try await api.fetchNonce()
+
+		let accountURL: URL
+		if let a = self.accountURL {
+			accountURL = a
+		} else {
+			accountURL = try await api.fetchAccountURL(nonce: &nonce, accountKey: auth.accountKey)
+		}
+
+		let account = try await api.update(request, nonce: &nonce, accountKey: auth.accountKey, accountURL: accountURL)
+		print("Updated account: \(account)")
 	}
 }
 
