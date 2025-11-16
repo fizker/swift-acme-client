@@ -14,9 +14,28 @@ struct AccountCommand: AsyncParsableCommand {
 		commandName: "account",
 		abstract: "Manage your account",
 		subcommands: [
+			CreateAccountKeyCommand.self,
 			FetchAccountCommand.self,
 		],
 	)
+}
+
+struct CreateAccountKeyCommand: AsyncParsableCommand {
+	static let configuration = CommandConfiguration(
+		commandName: "key",
+		abstract: """
+		Generates a new private key for use with accounts.
+		""",
+	)
+
+	@Option
+	var output: String
+
+	func run() async throws {
+		let key = Key.Private()
+		let fm = FileManager.default
+		fm.createFile(atPath: output, contents: Data(key.pemRepresentation.utf8))
+	}
 }
 
 struct FetchAccountCommand: AsyncParsableCommand {
