@@ -89,7 +89,7 @@ package struct API {
 		)
 	}
 
-	package func createAccount(nonce: inout Nonce, accountKey: Key.Private, request: NewAccountRequest) async throws -> Account? {
+	package func createAccount(nonce: inout Nonce, accountKey: Key.Private, request: NewAccountRequest) async throws -> (account: Account, url: URL)? {
 		let response = try await post(
 			ACMERequest(
 				url: directory.newAccount,
@@ -108,7 +108,12 @@ package struct API {
 
 		nonce = try response.nonce
 
-		return try await response.body.decode(using: coder)
+		return (
+			try await response.body.decode(using: coder),
+			try response.headers.first(name: "Location")
+				.flatMap(URL.init(string:))
+				.unwrap(orThrow: ACMEError.accountURLMissing),
+		)
 	}
 
 	private func post(_ acmeRequest: ACMERequest) async throws -> HTTPClientResponse {
