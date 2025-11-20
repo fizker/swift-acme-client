@@ -4,30 +4,10 @@ import ArgumentParser
 import Foundation
 import FzkExtensions
 
-struct AccountOptions: ParsableArguments {
-	@Option(name: .shortAndLong)
-	var directory: Directory
-}
-
-struct AuthOptions: ParsableArguments {
-	@Option(
-		name: .shortAndLong,
-		help: """
-		The path to a file containing a PEM representation of the private key for the Account.
-		""",
-		transform: {
-			let data = try FileManager.default.contents(atPath: $0).unwrap()
-			let content = try String(data: data, encoding: .utf8).unwrap()
-			return try .init(pemRepresentation: content)
-		},
-	)
-	var accountKey: Key.Private
-}
-
 struct AccountCommand: AsyncParsableCommand {
 	static let configuration = CommandConfiguration(
 		commandName: "account",
-		abstract: "Manage your account",
+		abstract: "Manage your account.",
 		subcommands: [
 			CreateAccountKeyCommand.self,
 			CreateAccountCommand.self,
@@ -45,7 +25,7 @@ struct CreateAccountKeyCommand: AsyncParsableCommand {
 		""",
 	)
 
-	@Option
+	@Option(help: "The file path that the new key should be written to.")
 	var output: String
 
 	func run() async throws {
@@ -58,6 +38,9 @@ struct CreateAccountKeyCommand: AsyncParsableCommand {
 struct FetchAccountCommand: AsyncParsableCommand {
 	static let configuration = CommandConfiguration(
 		commandName: "fetch",
+		abstract: """
+		Fetches account details from the ACME server.
+		""",
 	)
 
 	@OptionGroup
@@ -80,6 +63,9 @@ struct FetchAccountCommand: AsyncParsableCommand {
 struct CreateAccountCommand: AsyncParsableCommand {
 	static let configuration = CommandConfiguration(
 		commandName: "create",
+		abstract: """
+		Creates a new account.
+		""",
 	)
 
 	@OptionGroup
@@ -88,11 +74,15 @@ struct CreateAccountCommand: AsyncParsableCommand {
 	@OptionGroup
 	var auth: AuthOptions
 
-	@Option(name: .shortAndLong, parsing: .singleValue, transform: parseEmailURL(value:))
-	var contact: [URL]
+	@OptionGroup
+	var details: AccountDetailsOptions
 
 	func run() async throws {
-		let request = NewAccountRequest(contact: contact, termsOfServiceAgreed: true, externalAccountBinding: nil)
+		let request = NewAccountRequest(
+			contact: details.contact,
+			termsOfServiceAgreed: true,
+			externalAccountBinding: nil,
+		)
 		let api = try await API(directory: options.directory.acme)
 		var nonce = try await api.fetchNonce()
 		guard let account = try await api.createAccount(nonce: &nonce, accountKey: auth.accountKey, request: request)
@@ -109,6 +99,9 @@ struct CreateAccountCommand: AsyncParsableCommand {
 struct UpdateAccountCommand: AsyncParsableCommand {
 	static let configuration = CommandConfiguration(
 		commandName: "update",
+		abstract: """
+		Updates an existing account.
+		""",
 	)
 
 	@OptionGroup
@@ -117,14 +110,20 @@ struct UpdateAccountCommand: AsyncParsableCommand {
 	@OptionGroup
 	var auth: AuthOptions
 
-	@Option(name: .shortAndLong, parsing: .singleValue, transform: parseEmailURL(value:))
-	var contact: [URL]
+	@OptionGroup
+	var details: AccountDetailsOptions
 
-	@Option(transform: { try URL(string: $0).unwrap() })
+	@Option(
+		name: [.customShort("u"), .long],
+		help: """
+		The URL for the account. If this is omitted, it will be requested from the ACME server.
+		""",
+		transform: { try URL(string: $0).unwrap() },
+	)
 	var accountURL: URL?
 
 	func run() async throws {
-		let request = NewAccountRequest(contact: contact)
+		let request = NewAccountRequest(contact: details.contact)
 		let api = try await API(directory: options.directory.acme)
 		var nonce = try await api.fetchNonce()
 
@@ -151,4 +150,41 @@ func parseEmailURL(value: String) throws -> URL {
 		value = "mailto:\(value)"
 	}
 	return try URL(string: value).unwrap()
+}
+
+struct AccountOptions: ParsableArguments {
+	@Option(
+		name: .shortAndLong,
+		help: """
+		The URL for the directory of the ACME server. It can either be a HTTPS URL or a preset.
+		""",
+	)
+	var directory: Directory
+}
+
+struct AuthOptions: ParsableArguments {
+	@Option(
+		name: .shortAndLong,
+		help: """
+		The path to a file containing a PEM representation of the private key for the Account.
+		""",
+		transform: {
+			let data = try FileManager.default.contents(atPath: $0).unwrap()
+			let content = try String(data: data, encoding: .utf8).unwrap()
+			return try .init(pemRepresentation: content)
+		},
+	)
+	var accountKey: Key.Private
+}
+
+struct AccountDetailsOptions: ParsableArguments {
+	@Option(
+		name: .shortAndLong,
+		parsing: .singleValue,
+		help: """
+		An e-mail address for the contact. This parameter can be repeated as needed.
+		""",
+		transform: parseEmailURL(value:),
+	)
+	var contact: [URL]
 }
