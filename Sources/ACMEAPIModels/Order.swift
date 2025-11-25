@@ -1,4 +1,4 @@
-import Foundation
+public import Foundation
 
 /// An ACME order object
 
@@ -34,7 +34,18 @@ import Foundation
 ///
 /// Clients SHOULD check the "status" field of an order to determine
 /// whether they need to take any action.
-struct Order: Codable {
+public struct Order: Codable {
+	public init(status: Status, expires: Date? = nil, identifiers: [Identifier], notBefore: Date? = nil, notAfter: Date? = nil, error: ACMEProblem? = nil, authorizations: [URL], finalize: URL, certificate: URL? = nil) {
+		self.status = status
+		self.expires = expires
+		self.identifiers = identifiers
+		self.notBefore = notBefore
+		self.notAfter = notAfter
+		self.error = error
+		self.authorizations = authorizations
+		self.finalize = finalize
+		self.certificate = certificate
+	}
 
 	/// The status of this order
 	///
@@ -69,24 +80,24 @@ struct Order: Codable {
 	///     V                  V
 	///   valid             invalid
 	/// ```
-	var status: Status
+	public var status: Status
 
 	/// The timestamp after which the server will consider this order invalid, encoded in the format specified in [RFC3339].  This field is REQUIRED for objects with "pending" or "valid" in the status field.
-	var expires: Date?
+	public var expires: Date?
 
 	/// An array of identifier objects that the order pertains to.
-	var identifiers: [Identifier]
+	public var identifiers: [Identifier]
 
 	/// The requested value of the notBefore field in the certificate, in the date format defined in [RFC3339].
-	var notBefore: Date?
+	public var notBefore: Date?
 
 	/// The requested value of the notAfter field in the certificate, in the date format defined in [RFC3339].
-	var notAfter: Date?
+	public var notAfter: Date?
 
 	/// The error that occurred while processing the order, if any.
 	///
 	/// This field is structured as a problem document [RFC7807].
-	var error: ACMEProblem?
+	public var error: ACMEProblem?
 
 	/// For pending orders, the authorizations that the client needs to complete before the requested
 	/// certificate can be issued (see Section 7.5), including unexpired authorizations that the client has
@@ -97,19 +108,19 @@ struct Order: Codable {
 	/// For final orders (in the "valid" or "invalid" state), the authorizations that were completed.
 	///
 	/// Each entry is a URL from which an authorization can be fetched with a POST-as-GET request.
-	var authorizations: [URL]
+	public var authorizations: [URL]
 
 	/// A URL that a CSR must be POSTed to once all of the order's authorizations are satisfied to finalize the order.
 	/// The result of a successful finalization will be the population of the certificate URL for the order.
-	var finalize: URL
+	public var finalize: URL
 
 	/// A URL for the certificate that has been issued in response to this order.
-	var certificate: URL?
+	public var certificate: URL?
 
 	/// The status of an order.
 	///
 	/// https://datatracker.ietf.org/doc/html/rfc8555#section-7.1.6
-	enum Status: String, Codable {
+	public enum Status: String, Codable {
 		case pending
 		case ready
 		case processing

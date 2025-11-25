@@ -34,6 +34,8 @@ package struct API {
 		return try response.nonce
 	}
 
+	// MARK: - Account
+
 	package func fetchAccountURL(nonce: inout Nonce, accountKey: Key.Private) async throws -> URL {
 		let (accountURL, newNonce) = try await fetchAccountURL(nonce: nonce, accountKey: accountKey)
 		nonce = newNonce
@@ -49,11 +51,7 @@ package struct API {
 			body: ExistingAccountRequest(),
 		))
 
-		guard response.status.isSuccess
-		else {
-			let problem = try await response.body.decode(using: coder) as ACMEProblem
-			throw problem
-		}
+		try await response.assertSuccess()
 
 		guard let accountURL = response.headers.first(name: "location").flatMap(URL.init(string:))
 		else { throw ACMEError.accountURLMissing }
@@ -78,11 +76,7 @@ package struct API {
 			)
 		)
 
-		guard response.status.isSuccess
-		else {
-			let problem = try await response.body.decode(using: coder) as ACMEProblem
-			throw problem
-		}
+		try await response.assertSuccess()
 
 		return (
 			try await response.body.decode(using: coder),
@@ -101,11 +95,7 @@ package struct API {
 			)
 		)
 
-		guard response.status.isSuccess
-		else {
-			let problem = try await response.body.decode(using: coder) as ACMEProblem
-			throw problem
-		}
+		try await response.assertSuccess()
 
 		nonce = try response.nonce
 
@@ -129,16 +119,34 @@ package struct API {
 			)
 		)
 
-		guard response.status.isSuccess
-		else {
-			let problem = try await response.body.decode(using: coder) as ACMEProblem
-			throw problem
-		}
+		try await response.assertSuccess()
 
 		nonce = try response.nonce
 
 		return try await response.body.decode(using: coder)
 	}
+
+	// MARK: - Order
+
+	func createOrder(_ request: NewOrderRequest, nonce: inout Nonce, accountKey: Key.Private, accountURL: URL) async throws -> Order {
+		let response = try await post(
+			ACMERequest(
+				url: directory.newOrder,
+				nonce: nonce,
+				accountKey: accountKey,
+				accountURL: accountURL,
+				body: request,
+			)
+		)
+
+		try await response.assertSuccess()
+
+		nonce = try response.nonce
+
+		return try await response.body.decode(using: coder)
+	}
+
+	// MARK: -
 
 	private func post(_ acmeRequest: ACMERequest) async throws -> HTTPClientResponse {
 		var request = HTTPClientRequest(url: acmeRequest.url)
@@ -158,6 +166,14 @@ extension HTTPClientResponse {
 			else { throw ACMEError.nonceMissing }
 
 			return nonce
+		}
+	}
+
+	func assertSuccess() async throws {
+		guard status.isSuccess
+		else {
+			let problem = try await body.decode(using: coder) as ACMEProblem
+			throw problem
 		}
 	}
 }
