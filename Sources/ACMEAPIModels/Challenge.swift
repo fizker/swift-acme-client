@@ -5,7 +5,7 @@
 /// the validation method being used.  The general structure of challenge
 /// objects and an initial set of validation methods are described in
 /// [Section 8](https://datatracker.ietf.org/doc/html/rfc8555#section-8).
-struct Challenge: Codable {
+public struct Challenge: Codable {
 	/// Status of the challenge.
 	///
 	/// Challenge objects are created in the "pending" state.  They
@@ -38,9 +38,9 @@ struct Challenge: Codable {
 	///   V                   V
 	/// valid              invalid
 	/// ```
-	var status: Status
+	public var status: Status
 
-	enum Status: String, Codable {
+	public enum Status: String, Codable {
 		case pending, valid, invalid, deactivated, expired, revoked
 	}
 }
