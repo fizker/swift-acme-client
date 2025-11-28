@@ -1,3 +1,5 @@
+public import SwifterJSON
+
 /// An ACME challenge object represents a server's offer to validate a
 /// client's possession of an identifier in a specific way.  Unlike the
 /// other objects listed above, there is not a single standard structure
@@ -40,7 +42,28 @@ public struct Challenge: Codable {
 	/// ```
 	public var status: Status
 
+	public var allFields: [String: JSON]
+
+	public init(status: Status, allFields: [String: JSON]) {
+		self.status = status
+		self.allFields = allFields
+	}
+
+	public init(from decoder: any Decoder) throws {
+		let container = try decoder.container(keyedBy: CodingKeys.self)
+		self.status = try container.decode(Challenge.Status.self, forKey: .status)
+		self.allFields = try [String: JSON](from: decoder)
+	}
+
+	public func encode(to encoder: any Encoder) throws {
+		try allFields.encode(to: encoder)
+	}
+
+	enum CodingKeys: CodingKey {
+		case status
+	}
+
 	public enum Status: String, Codable {
-		case pending, valid, invalid, deactivated, expired, revoked
+		case pending, processing, valid, invalid
 	}
 }

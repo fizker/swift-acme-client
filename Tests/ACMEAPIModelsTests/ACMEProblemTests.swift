@@ -47,7 +47,7 @@ struct ACMEProblemTests {
 			],
 		)
 
-		let actual = try JSONDecoder().decode(ACMEProblem.self, from: json.data(using: .utf8)!)
+		let actual = try decode(json) as ACMEProblem
 
 		#expect(actual == expected)
 	}
