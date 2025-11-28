@@ -146,6 +146,24 @@ package struct API {
 		return try await response.body.decode(using: coder)
 	}
 
+	func authorization(at url: URL, nonce: inout Nonce, accountKey: Key.Private, accountURL: URL) async throws -> Authorization {
+		var response = try await post(
+			ACMERequest(
+				url: url,
+				nonce: nonce,
+				accountKey: accountKey,
+				accountURL: accountURL,
+				body: nil
+			)
+		)
+
+		try await response.assertSuccess()
+
+		nonce = try response.nonce
+
+		return try await response.body.decode(using: coder)
+	}
+
 	// MARK: -
 
 	private func post(_ acmeRequest: ACMERequest) async throws -> HTTPClientResponse {
