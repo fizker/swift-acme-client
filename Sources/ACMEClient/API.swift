@@ -53,7 +53,7 @@ package struct API {
 
 		try await response.assertSuccess()
 
-		guard let accountURL = response.headers.first(name: "location").flatMap(URL.init(string:))
+		guard let accountURL = response.location
 		else { throw ACMEError.accountURLMissing }
 
 		return (accountURL, try response.nonce)
@@ -128,7 +128,7 @@ package struct API {
 
 	// MARK: - Order
 
-	func createOrder(_ request: NewOrderRequest, nonce: inout Nonce, accountKey: Key.Private, accountURL: URL) async throws -> Order {
+	func createOrder(_ request: NewOrderRequest, nonce: inout Nonce, accountKey: Key.Private, accountURL: URL) async throws -> (Order, URL) {
 		let response = try await post(
 			ACMERequest(
 				url: directory.newOrder,
@@ -143,11 +143,17 @@ package struct API {
 
 		nonce = try response.nonce
 
-		return try await response.body.decode(using: coder)
+		guard let url = response.location
+		else { throw ACMEError.orderURLMissing }
+
+		return (
+			try await response.body.decode(using: coder),
+			url,
+		)
 	}
 
 	func authorization(at url: URL, nonce: inout Nonce, accountKey: Key.Private, accountURL: URL) async throws -> Authorization {
-		var response = try await post(
+		let response = try await post(
 			ACMERequest(
 				url: url,
 				nonce: nonce,
@@ -185,6 +191,11 @@ extension HTTPClientResponse {
 
 			return nonce
 		}
+	}
+
+	/// Tries to parse a URL from the location header.
+	var location: URL? {
+		headers.first(name: "location").flatMap(URL.init(string:))
 	}
 
 	func assertSuccess() async throws {

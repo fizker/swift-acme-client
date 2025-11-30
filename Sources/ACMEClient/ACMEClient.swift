@@ -20,7 +20,7 @@ public actor ACMEClient {
 
 	func requestCertificateViaDNS(covering domains: [Domain]) async throws {
 		var nonce = nonce
-		let order = try await api.createOrder(
+		let (order, orderURL) = try await api.createOrder(
 			NewOrderRequest(identifiers: domains.map { Identifier(type: .dns, value: $0.value) }),
 			nonce: &nonce,
 			accountKey: accountKey,
