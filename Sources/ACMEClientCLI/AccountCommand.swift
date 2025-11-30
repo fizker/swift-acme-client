@@ -44,10 +44,10 @@ struct FetchAccountCommand: AsyncParsableCommand {
 	)
 
 	@OptionGroup
-	var options: AccountOptions
+	var options: DirectoryOptions
 
 	@OptionGroup
-	var auth: AuthOptions
+	var auth: AccountKeyOptions
 
 	func run() async throws {
 		print("fetching account now: \(options.directory), \(options.directory.acme), \(options.directory.acme.rawValue)")
@@ -69,10 +69,10 @@ struct CreateAccountCommand: AsyncParsableCommand {
 	)
 
 	@OptionGroup
-	var options: AccountOptions
+	var options: DirectoryOptions
 
 	@OptionGroup
-	var auth: AuthOptions
+	var auth: AccountKeyOptions
 
 	@OptionGroup
 	var details: AccountDetailsOptions
@@ -105,7 +105,7 @@ struct UpdateAccountCommand: AsyncParsableCommand {
 	)
 
 	@OptionGroup
-	var options: AccountOptions
+	var options: DirectoryOptions
 
 	@OptionGroup
 	var auth: AuthOptions
@@ -113,22 +113,13 @@ struct UpdateAccountCommand: AsyncParsableCommand {
 	@OptionGroup
 	var details: AccountDetailsOptions
 
-	@Option(
-		name: [.customShort("u"), .long],
-		help: """
-		The URL for the account. If this is omitted, it will be requested from the ACME server.
-		""",
-		transform: { try URL(string: $0).unwrap() },
-	)
-	var accountURL: URL?
-
 	func run() async throws {
 		let request = NewAccountRequest(contact: details.contact)
 		let api = try await API(directory: options.directory.acme)
 		var nonce = try await api.fetchNonce()
 
 		let accountURL: URL
-		if let a = self.accountURL {
+		if let a = auth.accountURL {
 			accountURL = a
 		} else {
 			accountURL = try await api.fetchAccountURL(nonce: &nonce, accountKey: auth.accountKey)
@@ -152,30 +143,6 @@ func parseEmailURL(value: String) throws -> URL {
 	return try URL(string: value).unwrap()
 }
 
-struct AccountOptions: ParsableArguments {
-	@Option(
-		name: .shortAndLong,
-		help: """
-		The URL for the directory of the ACME server. It can either be a HTTPS URL or a preset.
-		""",
-	)
-	var directory: Directory
-}
-
-struct AuthOptions: ParsableArguments {
-	@Option(
-		name: .shortAndLong,
-		help: """
-		The path to a file containing a PEM representation of the private key for the Account.
-		""",
-		transform: {
-			let data = try FileManager.default.contents(atPath: $0).unwrap()
-			let content = try String(data: data, encoding: .utf8).unwrap()
-			return try .init(pemRepresentation: content)
-		},
-	)
-	var accountKey: Key.Private
-}
 
 struct AccountDetailsOptions: ParsableArguments {
 	@Option(
