@@ -4,7 +4,7 @@ import Foundation
 
 struct AccountKeyOptions: ParsableArguments {
 	@Option(
-		name: .shortAndLong,
+		name: [.long, .customShort("k")],
 		help: """
 		The path to a file containing a PEM representation of the private key for the Account.
 		""",

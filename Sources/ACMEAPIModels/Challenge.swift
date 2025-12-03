@@ -7,7 +7,7 @@ public import SwifterJSON
 /// the validation method being used.  The general structure of challenge
 /// objects and an initial set of validation methods are described in
 /// [Section 8](https://datatracker.ietf.org/doc/html/rfc8555#section-8).
-public struct Challenge: Codable {
+public struct Challenge: Codable, Sendable {
 	/// Status of the challenge.
 	///
 	/// Challenge objects are created in the "pending" state.  They
@@ -63,7 +63,16 @@ public struct Challenge: Codable {
 		case status
 	}
 
-	public enum Status: String, Codable {
+	public enum Status: String, Codable, Sendable {
 		case pending, processing, valid, invalid
+	}
+}
+
+extension Challenge: CustomStringConvertible {
+	public var description: String {
+		allFields
+			.map { "\($0.key): \($0.value)" }
+			.sorted()
+			.joined(separator: "\n")
 	}
 }

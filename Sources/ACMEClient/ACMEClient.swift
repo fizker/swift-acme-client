@@ -11,14 +11,20 @@ public actor ACMEClient {
 	let api: API
 	var nonce: Nonce
 
-	public init(directory: ACMEDirectory, accountKey: Key.Private, accountURL: URL) async throws {
+	public init(directory: ACMEDirectory, accountKey: Key.Private, accountURL: URL?) async throws {
 		self.accountKey = accountKey
-		self.accountURL = accountURL
 		api = try await API(directory: directory)
-		nonce = try await api.fetchNonce()
+		var nonce = try await api.fetchNonce()
+		if let accountURL {
+			self.accountURL = accountURL
+		} else {
+			self.accountURL = try await api.fetchAccountURL(nonce: &nonce, accountKey: accountKey)
+			print("Fetched account URL: \(self.accountURL)")
+		}
+		self.nonce = nonce
 	}
 
-	func requestCertificateViaDNS(covering domains: [Domain]) async throws {
+	public func requestCertificateViaDNS(covering domains: [Domain]) async throws {
 		var nonce = nonce
 		let (order, orderURL) = try await api.createOrder(
 			NewOrderRequest(identifiers: domains.map { Identifier(type: .dns, value: $0.value) }),
@@ -40,6 +46,9 @@ public actor ACMEClient {
 
 			print("Auth for \(auth.identifier.value) is pending")
 			print("There are \(auth.challenges.count) challenges available")
+			for challenge in auth.challenges {
+				print("Challenge:\n\(challenge, indentedWith: "- ")")
+			}
 		}
 
 		// Wait for challenges to be resolved
@@ -58,7 +67,7 @@ struct CustomError: Error {
 public struct Domain {
 	let value: String
 
-	init?(_ string: String) {
+	public init?(_ string: String) {
 		guard !string.isEmpty
 		else { return nil }
 
