@@ -69,6 +69,7 @@ let package = Package(
 			name: "ACMEAPIModelsTests",
 			dependencies: [
 				"ACMEAPIModels",
+				.product(name: "CompileSafeInitMacro", package: "swift-macro-compile-safe-init"),
 				.product(name: "FzkExtensions", package: "swift-extensions"),
 			],
 		),
