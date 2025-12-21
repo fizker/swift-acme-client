@@ -3,6 +3,7 @@ package import ACMEClientModels
 package import AsyncHTTPClient
 package import Foundation
 import FzkExtensions
+import X509
 
 package struct API {
 	let httpClient: HTTPClient
@@ -150,6 +151,62 @@ package struct API {
 			try await response.body.decode(using: coder),
 			url,
 		)
+	}
+
+	func order(url: URL, nonce: inout Nonce, accountKey: Key.Private, accountURL: URL) async throws -> Order {
+		let response = try await post(
+			ACMERequest(
+				url: url,
+				nonce: nonce,
+				accountKey: accountKey,
+				accountURL: accountURL,
+				body: nil,
+			)
+		)
+
+		try await response.assertSuccess()
+
+		nonce = try response.nonce
+
+		return try await response.body.decode(using: coder)
+	}
+
+	func finalize(order: Order, nonce: inout Nonce, accountKey: Key.Private, accountURL: URL) async throws {
+		let domains = order.identifiers.map(\.value)
+
+		let privateKey = Certificate.PrivateKey(try .init(keySize: .bits2048))
+		let commonName = domains[0]
+		let name = try DistinguishedName {
+			CommonName(commonName)
+		}
+		let extensions = try Certificate.Extensions {
+			SubjectAlternativeNames(domains.map({ GeneralName.dnsName($0) }))
+		}
+		let extensionRequest = ExtensionRequest(extensions: extensions)
+		let attributes = try CertificateSigningRequest.Attributes(
+			[.init(extensionRequest)]
+		)
+		let csr = try CertificateSigningRequest(
+			version: .v1,
+			subject: name,
+			privateKey: privateKey,
+			attributes: attributes,
+			signatureAlgorithm: .sha256WithRSAEncryption
+		)
+
+		let response = try await post(
+			ACMERequest(
+				url: order.finalize,
+				nonce: nonce,
+				accountKey: accountKey,
+				accountURL: accountURL,
+				body: FinalizeOrderRequest(csr: csr),
+			)
+		)
+
+		try await response.assertSuccess()
+
+		nonce = try response.nonce
 	}
 
 	func authorization(at url: URL, nonce: inout Nonce, accountKey: Key.Private, accountURL: URL) async throws -> Authorization {

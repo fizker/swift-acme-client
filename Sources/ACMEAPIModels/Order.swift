@@ -120,11 +120,37 @@ public struct Order: Codable {
 	/// The status of an order.
 	///
 	/// https://datatracker.ietf.org/doc/html/rfc8555#section-7.1.6
+	///
+	/// ### State Transitions for Order Objects
+	/// ```
+	///  pending --------------+
+	///     |                  |
+	///     | All authz        |
+	///     | "valid"          |
+	///     V                  |
+	///   ready ---------------+
+	///     |                  |
+	///     | Receive          |
+	///     | finalize         |
+	///     | request          |
+	///     V                  |
+	/// processing ------------+
+	///     |                  |
+	///     | Certificate      | Error or
+	///     | issued           | Authorization failure
+	///     V                  V
+	///   valid             invalid
+	/// ```
 	public enum Status: String, Codable {
+		/// At least one auth of the order is still not verified
 		case pending
+		/// All authz have turned ``Authorization/Status/valid``.
 		case ready
+		/// The order is being finalized and a certificate is being generated.
 		case processing
+		/// The certificate have been issued and is ready for download.
 		case valid
+		/// Auth failed or other error occured.
 		case invalid
 	}
 }
