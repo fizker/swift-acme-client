@@ -171,7 +171,7 @@ package struct API {
 		return try await response.body.decode(using: coder)
 	}
 
-	func finalize(order: Order, nonce: inout Nonce, accountKey: Key.Private, accountURL: URL) async throws {
+	func finalize(order: Order, orderURL: URL, nonce: inout Nonce, accountKey: Key.Private, accountURL: URL) async throws -> Order {
 		let domains = order.identifiers.map(\.value)
 
 		let privateKey = Certificate.PrivateKey(try .init(keySize: .bits2048))
@@ -207,6 +207,13 @@ package struct API {
 		try await response.assertSuccess()
 
 		nonce = try response.nonce
+
+		return try await self.order(
+			url: orderURL,
+			nonce: &nonce,
+			accountKey: accountKey,
+			accountURL: accountURL,
+		)
 	}
 
 	func authorization(at url: URL, nonce: inout Nonce, accountKey: Key.Private, accountURL: URL) async throws -> Authorization {
@@ -225,6 +232,18 @@ package struct API {
 		nonce = try response.nonce
 
 		return try await response.body.decode(using: coder)
+	}
+
+	func respondTo(_ challenge: Challenge, nonce: inout Nonce, accountKey: Key.Private, accountURL: URL) async throws {
+		let response = try await post(ACMERequest(
+			url: challenge.url,
+			nonce: nonce,
+			accountKey: accountKey,
+			accountURL: accountURL,
+			body: nil,
+		))
+		try await response.assertSuccess()
+		nonce = try response.nonce
 	}
 
 	// MARK: -
