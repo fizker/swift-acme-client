@@ -34,6 +34,7 @@ let package = Package(
 	],
 	dependencies: [
 		.package(url: "https://github.com/apple/swift-argument-parser", from: "1.6.2"),
+		.package(url: "https://github.com/apple/swift-certificates.git", from: "1.15.0"),
 		.package(url: "https://github.com/apple/swift-crypto.git", from: "4.1.0"),
 		.package(url: "https://github.com/fizker/swift-extensions.git", from:"1.5.1"),
 		.package(url: "https://github.com/fizker/swift-macro-compile-safe-init", from: "1.0.0"),
@@ -49,6 +50,7 @@ let package = Package(
 				"ACMEClientModels",
 				.product(name: "AsyncHTTPClient", package: "async-http-client"),
 				.product(name: "JWTKit", package: "jwt-kit"),
+				.product(name: "X509", package: "swift-certificates"),
 				.product(name: "Crypto", package: "swift-crypto"),
 			],
 			swiftSettings: upcomingFeatures,
@@ -77,6 +79,7 @@ let package = Package(
 		.target(
 			name: "ACMEClientModels",
 			dependencies: [
+				.product(name: "X509", package: "swift-certificates"),
 				.product(name: "FzkExtensions", package: "swift-extensions"),
 				.product(name: "CompileSafeInitMacro", package: "swift-macro-compile-safe-init"),
 			],
@@ -86,6 +89,8 @@ let package = Package(
 			name: "ACMEClientModelsTests",
 			dependencies: [
 				"ACMEClientModels",
+				.product(name: "X509", package: "swift-certificates"),
+				.product(name: "Crypto", package: "swift-crypto"),
 				.product(name: "CompileSafeInitMacro", package: "swift-macro-compile-safe-init"),
 			],
 		),

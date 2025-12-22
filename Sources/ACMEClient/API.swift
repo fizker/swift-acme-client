@@ -246,6 +246,37 @@ package struct API {
 		nonce = try response.nonce
 	}
 
+	func downloadCertificateChain(for order: Order, nonce: inout Nonce, accountKey: Key.Private, accountURL: URL) async throws -> CertificateChain {
+		guard
+			order.status == .valid,
+			let certificateURL = order.certificate
+		else {
+			throw ACMEProblem(
+				type: .orderNotReady,
+				detail: "Order must be ready before attempting certificate download",
+			)
+		}
+
+		let certResponse = try await post(
+			ACMERequest(
+				url: certificateURL,
+				nonce: nonce,
+				accountKey: accountKey,
+				accountURL: accountURL,
+				body: nil,
+			)
+		)
+		try await certResponse.assertSuccess()
+
+		let rawBody = try await certResponse.body.collect(upTo: Int.max)
+		let string = String(buffer: rawBody)
+
+		let separator = "-----END CERTIFICATE-----\n"
+		let pemCertificates = string.split(separator: separator).map { "\($0)\(separator)" }
+
+		return try CertificateChain(certificates: pemCertificates.map { try CertificateData(pemEncoded: $0, isSelfSigned: false) })
+	}
+
 	// MARK: -
 
 	private func post(_ acmeRequest: ACMERequest) async throws -> HTTPClientResponse {
