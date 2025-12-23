@@ -171,7 +171,7 @@ package struct API {
 		return try await response.body.decode(using: coder)
 	}
 
-	func finalize(order: Order, orderURL: URL, nonce: inout Nonce, accountKey: Key.Private, accountURL: URL) async throws -> Order {
+	func finalize(order: Order, orderURL: URL, nonce: inout Nonce, accountKey: Key.Private, accountURL: URL) async throws -> (Order, Certificate.PrivateKey) {
 		let domains = order.identifiers.map(\.value)
 
 		let privateKey = Certificate.PrivateKey(try .init(keySize: .bits2048))
@@ -208,11 +208,14 @@ package struct API {
 
 		nonce = try response.nonce
 
-		return try await self.order(
-			url: orderURL,
-			nonce: &nonce,
-			accountKey: accountKey,
-			accountURL: accountURL,
+		return (
+			try await self.order(
+				url: orderURL,
+				nonce: &nonce,
+				accountKey: accountKey,
+				accountURL: accountURL,
+			),
+			privateKey,
 		)
 	}
 

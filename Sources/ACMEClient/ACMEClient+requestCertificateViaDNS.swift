@@ -1,4 +1,5 @@
 import ACMEAPIModels
+public import ACMEClientModels
 import Foundation
 import JWTKit
 
@@ -30,7 +31,7 @@ import JWTKit
 /// +-------------------+--------------------------------+--------------+
 /// ```
 extension ACMEClient {
-	public func requestCertificateViaDNS(covering domains: [Domain]) async throws {
+	public func requestCertificateViaDNS(covering domains: [Domain]) async throws -> CertificateAndPrivateKey {
 		var nonce = nonce
 		let (order, orderURL) = try await api.createOrder(
 			NewOrderRequest(identifiers: domains.map { Identifier(type: .dns, value: $0.value) }),
@@ -70,7 +71,7 @@ extension ACMEClient {
 		} while false
 
 		// ACMEAPIModels.ErrorType.orderNotReady error here would indicate that we might not be fully validated yet
-		let finalizedOrder = try await api.finalize(
+		let (finalizedOrder, privateKey) = try await api.finalize(
 			order: orderToFinalize,
 			orderURL: orderURL,
 			nonce: &nonce,
@@ -78,7 +79,14 @@ extension ACMEClient {
 			accountURL: accountURL,
 		)
 
-		#warning("Download cert")
+		let certificateChain = try await api.downloadCertificateChain(
+			for: finalizedOrder,
+			nonce: &nonce,
+			accountKey: accountKey,
+			accountURL: accountURL,
+		)
+
+		return .init(certificateChain: certificateChain, privateKey: privateKey)
 	}
 
 	private func verifyChallenges(order: Order, nonce: inout Nonce) async throws {
