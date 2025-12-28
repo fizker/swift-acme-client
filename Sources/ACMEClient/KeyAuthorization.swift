@@ -15,6 +15,10 @@ struct KeyAuthorization {
 	func value(for challenge: Challenge) -> String {
 		"\(challenge.token).\(thumbprint)"
 	}
+
+	func digest(for challenge: Challenge) -> SHA256Digest {
+		SHA256.hash(data: value(for: challenge).data(using: .utf8)!)
+	}
 }
 
 extension JWK {

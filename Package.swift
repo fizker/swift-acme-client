@@ -57,7 +57,10 @@ let package = Package(
 		),
 		.testTarget(
 			name: "ACMEClientTests",
-			dependencies: ["ACMEClient"],
+			dependencies: [
+				"ACMEClient",
+				.product(name: "CompileSafeInitMacro", package: "swift-macro-compile-safe-init"),
+			],
 		),
 
 		.target(
