@@ -43,32 +43,9 @@ extension ACMEClient {
 		guard order.status != .invalid
 		else { throw CustomError(message: "Could not initiate order") }
 
-		try await verifyChallenges(order: order, nonce: &nonce)
-
-		var orderToFinalize: Order! = nil
-		// poll the server for when the order is ready. wait between polls
-		verifyOrderLoop: repeat {
-			let updatedOrder = try await api.order(
-				url: orderURL,
-				nonce: &nonce,
-				accountKey: accountKey,
-				accountURL: accountURL,
-			)
-			switch updatedOrder.status {
-			case .pending:
-				// We wait a bit before polling again
-				try await Task.sleep(for: .seconds(10))
-				continue verifyOrderLoop
-			case .ready:
-				// wat - this should only happen after we finalize
-				fallthrough
-			case .processing, .valid:
-				orderToFinalize = updatedOrder
-				break verifyOrderLoop
-			case .invalid:
-				throw CertificateChallengeError.orderFailed
-			}
-		} while false
+		let orderToFinalize = try await verifyChallenges(order: order, nonce: &nonce)
+			? try await pollForAuthCompleted(orderURL: orderURL)
+			: order
 
 		// ACMEAPIModels.ErrorType.orderNotReady error here would indicate that we might not be fully validated yet
 		let (finalizedOrder, privateKey) = try await api.finalize(
@@ -89,9 +66,34 @@ extension ACMEClient {
 		return .init(certificateChain: certificateChain, privateKey: privateKey)
 	}
 
-	private func verifyChallenges(order: Order, nonce: inout Nonce) async throws {
-		var nonDNS = [Authorization]()
-		var continueAuths = [Challenge]()
+	private func pollForAuthCompleted(orderURL: URL) async throws -> Order {
+		repeat {
+			let updatedOrder = try await api.order(
+				url: orderURL,
+				nonce: &nonce,
+				accountKey: accountKey,
+				accountURL: accountURL,
+			)
+			switch updatedOrder.status {
+			case .pending:
+				logger.debug("Sleeping 10s before polling again")
+				try await Task.sleep(for: .seconds(10))
+				break
+			case .ready:
+				// wat - this should only happen after we finalize
+				fallthrough
+			case .processing, .valid:
+				return updatedOrder
+			case .invalid:
+				throw CertificateChallengeError.orderFailed
+			}
+		} while true
+	}
+
+	/// - Returns: True if any challenges required verification.
+	private func verifyChallenges(order: Order, nonce: inout Nonce) async throws -> Bool {
+		var nonDNS = [(URL, Authorization)]()
+		var remainingAuths = [(URL, Challenge)]()
 
 		let keyAuth = try KeyAuthorization(publicKey: accountKey.publicKey)
 
@@ -105,11 +107,11 @@ extension ACMEClient {
 
 			guard let dnsChallenge = auth.challenges.first(where: { $0.type == .dns })
 			else {
-				nonDNS.append(auth)
+				nonDNS.append((url, auth))
 				continue
 			}
 
-			continueAuths.append(dnsChallenge)
+			remainingAuths.append((url, dnsChallenge))
 
 			let domain = auth.identifier.value
 			let txt = if domain.hasPrefix("*") {
@@ -118,13 +120,17 @@ extension ACMEClient {
 				"_acme-challenge.\(domain)"
 			}
 
-			print("For \(domain), add a TXT record at \(txt) containing:\n- \(keyAuth.value(for: dnsChallenge))")
+			let digest = keyAuth.digest(for: dnsChallenge)
+			print("""
+			For \(domain), add a TXT record at \(txt) containing:
+			- \(digest.base64urlEncodedString())
+			""")
 		}
 
 		if !nonDNS.isEmpty {
 			print("The following identifiers did not support DNS")
 
-			for auth in nonDNS {
+			for (_, auth) in nonDNS {
 				print("--------")
 				print("Auth for \(auth.identifier.value) cannot be automated")
 				print("There are \(auth.challenges.count) challenges available")
@@ -136,6 +142,9 @@ extension ACMEClient {
 		}
 
 		if nonDNS.isEmpty {
+			guard !remainingAuths.isEmpty
+			else { return false }
+
 			awaitKeyboardInput()
 		} else {
 			readKeyboard: while true {
@@ -149,15 +158,15 @@ extension ACMEClient {
 						throw CertificateChallengeError.invalidInputCount
 					}
 
-					continueAuths += try nonDNS.map { auth in
+					remainingAuths += try nonDNS.map { (url, auth) in
 						let choice = chosenAuth.removeFirst()
 						guard let challenge = auth.challenges[safe: choice]
 						else {
-							print("Choice for \(auth.identifier.value) was did not match option")
+							print("Choice for \(auth.identifier) was did not match option")
 							throw CertificateChallengeError.invalidInputChoice
 						}
 
-						return challenge
+						return (url, challenge)
 					}
 
 					break readKeyboard
@@ -167,14 +176,29 @@ extension ACMEClient {
 			}
 		}
 
-		for challenge in continueAuths {
-			try await api.respondTo(
-				challenge,
-				nonce: &nonce,
-				accountKey: accountKey,
-				accountURL: accountURL,
-			)
+		while !remainingAuths.isEmpty {
+			for (_, challenge) in remainingAuths {
+				try await api.respondTo(
+					challenge,
+					nonce: &nonce,
+					accountKey: accountKey,
+					accountURL: accountURL,
+				)
+			}
+
+			try await Task.sleep(for: .seconds(30))
+
+			for (url, _) in remainingAuths {
+				let auth = try await api.authorization(at: url, nonce: &nonce, accountKey: accountKey, accountURL: accountURL)
+				if auth.status != .pending {
+					remainingAuths.removeAll { $0.0 == url }
+				}
+
+				logger.debug("Auth for \(auth.identifier) is still pending verifying, retrying")
+			}
 		}
+
+		return true
 	}
 }
 

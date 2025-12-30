@@ -1,6 +1,7 @@
 import ACMEAPIModels
 public import ACMEClientModels
 public import Foundation
+import Logging
 
 let `1mb` = 1024 * 1024
 
@@ -9,6 +10,7 @@ public class ACMEClient {
 	let accountURL: URL
 	let api: API
 	var nonce: Nonce
+	let logger = Logger(label: "acme-client")
 
 	public init(directory: ACMEDirectory, accountKey: Key.Private, accountURL: URL?) async throws {
 		self.accountKey = accountKey

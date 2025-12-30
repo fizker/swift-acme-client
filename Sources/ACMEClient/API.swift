@@ -3,11 +3,13 @@ package import ACMEClientModels
 package import AsyncHTTPClient
 package import Foundation
 import FzkExtensions
+import Logging
 import X509
 
 package struct API {
 	let httpClient: HTTPClient
 	let directory: Directory
+	let logger = Logger(label: "acme-client.api")
 
 	package init(httpClient: HTTPClient = .shared, directory: Directory) {
 		self.httpClient = httpClient
@@ -154,6 +156,9 @@ package struct API {
 	}
 
 	func order(url: URL, nonce: inout Nonce, accountKey: Key.Private, accountURL: URL) async throws -> Order {
+		// The nonce from outside failed with `JWS has an invalid anti-replay nonce`,
+		// so we spend a call here to ensure a nonce
+		nonce = try await fetchNonce()
 		let response = try await post(
 			ACMERequest(
 				url: url,
@@ -256,7 +261,7 @@ package struct API {
 		else {
 			throw ACMEProblem(
 				type: .orderNotReady,
-				detail: "Order must be ready before attempting certificate download",
+				detail: "Order must be ready before attempting certificate download. Status: \(order.status), certificate: \(order.certificate, default: "nil")",
 			)
 		}
 
@@ -270,6 +275,8 @@ package struct API {
 			)
 		)
 		try await certResponse.assertSuccess()
+
+		nonce = try certResponse.nonce
 
 		let rawBody = try await certResponse.body.collect(upTo: Int.max)
 		let string = String(buffer: rawBody)

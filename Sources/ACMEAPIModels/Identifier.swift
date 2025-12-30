@@ -49,3 +49,7 @@ public struct Identifier: Codable, Equatable, Sendable {
 		self.value = value
 	}
 }
+
+extension Identifier: CustomStringConvertible {
+	public var description: String { value }
+}
