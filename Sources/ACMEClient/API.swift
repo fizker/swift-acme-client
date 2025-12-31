@@ -292,6 +292,9 @@ package struct API {
 	// MARK: -
 
 	private func post(_ acmeRequest: ACMERequest) async throws -> HTTPClientResponse {
+		logger.trace("Sending ACME request to \(acmeRequest.url)")
+		defer { logger.trace("Sending ACME request to \(acmeRequest.url) - completed") }
+
 		var request = HTTPClientRequest(url: acmeRequest.url)
 		request.headers.add(name: "content-type", value: "application/jose+json")
 		request.method = .POST

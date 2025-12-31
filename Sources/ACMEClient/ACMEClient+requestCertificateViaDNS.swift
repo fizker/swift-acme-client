@@ -32,6 +32,8 @@ import JWTKit
 /// ```
 extension ACMEClient {
 	public func requestCertificateViaDNS(covering domains: [Domain]) async throws -> CertificateAndPrivateKey {
+		logger.trace("Creating order")
+
 		var nonce = nonce
 		let (order, orderURL) = try await api.createOrder(
 			NewOrderRequest(identifiers: domains.map { Identifier(type: .dns, value: $0.value) }),
@@ -39,6 +41,10 @@ extension ACMEClient {
 			accountKey: accountKey,
 			accountURL: accountURL,
 		)
+
+		logger.trace("Order created", metadata: [
+			"order": "\(order)",
+		])
 
 		guard order.status != .invalid
 		else { throw CustomError(message: "Could not initiate order") }
@@ -92,16 +98,26 @@ extension ACMEClient {
 
 	/// - Returns: True if any challenges required verification.
 	private func verifyChallenges(order: Order, nonce: inout Nonce) async throws -> Bool {
+		logger.trace("Verifying challenges")
+
 		var nonDNS = [(URL, Authorization)]()
 		var remainingAuths = [(URL, Challenge)]()
 
 		let keyAuth = try KeyAuthorization(publicKey: accountKey.publicKey)
 
 		for url in order.authorizations {
-			let auth = try await api.authorization(at: url, nonce: &nonce, accountKey: accountKey, accountURL: accountURL)
+			let auth = try await api.authorization(
+				at: url,
+				nonce: &nonce,
+				accountKey: accountKey,
+				accountURL: accountURL,
+			)
+
+			logger.trace("Fetched auth data for \(auth.identifier)")
+
 			guard auth.status == .pending
 			else {
-				print("Auth for \(auth.identifier.value) is \(auth.status)")
+				logger.debug("Auth for \(auth.identifier) is \(auth.status), skipping")
 				continue
 			}
 
@@ -124,6 +140,7 @@ extension ACMEClient {
 			print("""
 			For \(domain), add a TXT record at \(txt) containing:
 			- \(digest.base64urlEncodedString())
+			- Token: \(dnsChallenge.token)
 			""")
 		}
 
@@ -176,6 +193,8 @@ extension ACMEClient {
 			}
 		}
 
+		logger.trace("User thinks challenges are ready for verification. Informing ACME server")
+
 		while !remainingAuths.isEmpty {
 			var postVerification: [Challenge] = []
 			for (_, challenge) in remainingAuths {
@@ -185,6 +204,8 @@ extension ACMEClient {
 					accountKey: accountKey,
 					accountURL: accountURL,
 				)
+
+				logger.debug("Received response to challenge with token \(challenge.token): \(result)")
 
 				if result.status == .pending {
 					postVerification.append(result)

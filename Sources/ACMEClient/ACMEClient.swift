@@ -14,14 +14,21 @@ public class ACMEClient {
 
 	public init(directory: ACMEDirectory, accountKey: Key.Private, accountURL: URL?) async throws {
 		self.accountKey = accountKey
+
+		logger.trace("Requesting directory")
 		api = try await API(directory: directory)
+
+		logger.trace("Requesting nonce")
 		var nonce = try await api.fetchNonce()
+
 		if let accountURL {
 			self.accountURL = accountURL
 		} else {
+			logger.trace("Fetching account URL")
 			self.accountURL = try await api.fetchAccountURL(nonce: &nonce, accountKey: accountKey)
 			print("Fetched account URL: \(self.accountURL)")
 		}
+
 		self.nonce = nonce
 	}
 }
