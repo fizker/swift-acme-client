@@ -16,11 +16,32 @@ struct ACMERequest: Encodable {
 	fileprivate var payload: String
 	fileprivate var signature: String
 
-	init(url: URL, nonce: Nonce, accountKey: Key.Private, accountURL: URL?, body: Never?) throws {
-		try self.init(url: url, nonce: nonce, accountKey: accountKey, accountURL: accountURL, body: nil as String?)
+	init(url: URL, nonce: Nonce, accountKey: Key.Private, accountURL: URL?, body: SpecialCases) throws {
+		let body: Data? = switch body {
+		case .emptyBody: "{}".data(using: .utf8)!
+		case .getAsPost: nil
+		}
+
+		try self.init(
+			url: url,
+			nonce: nonce,
+			accountKey: accountKey,
+			accountURL: accountURL,
+			body: body,
+		)
 	}
 
-	init(url: URL, nonce: Nonce, accountKey: Key.Private, accountURL: URL?, body: (some Encodable)?) throws {
+	init(url: URL, nonce: Nonce, accountKey: Key.Private, accountURL: URL?, body: (some Encodable)) throws {
+		try self.init(
+			url: url,
+			nonce: nonce,
+			accountKey: accountKey,
+			accountURL: accountURL,
+			body: try coder.encoder.encode(body) as Data?,
+		)
+	}
+
+	private init(url: URL, nonce: Nonce, accountKey: Key.Private, accountURL: URL?, body: Data?) throws {
 		self.url = url
 
 		header =  try coder.encoder.encode(ProtectedHeader(
@@ -30,9 +51,14 @@ struct ACMERequest: Encodable {
 			kid: accountURL,
 			jwk: accountURL == nil ? .ecdsa(publicKey: accountKey.publicKey) : nil,
 		)).base64urlEncodedString()
-		payload = try body.flatMap { try coder.encoder.encode($0).base64urlEncodedString() } ?? ""
+		payload = body?.base64urlEncodedString() ?? ""
 		let sign = "\(header).\(payload)"
 		signature = try accountKey.signature(for: Data(sign.utf8)).rawRepresentation.base64urlEncodedString()
+	}
+
+	enum SpecialCases {
+		case getAsPost
+		case emptyBody
 	}
 }
 

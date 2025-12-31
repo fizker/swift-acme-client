@@ -177,14 +177,22 @@ extension ACMEClient {
 		}
 
 		while !remainingAuths.isEmpty {
+			var postVerification: [Challenge] = []
 			for (_, challenge) in remainingAuths {
-				try await api.respondTo(
+				let result = try await api.respondTo(
 					challenge,
 					nonce: &nonce,
 					accountKey: accountKey,
 					accountURL: accountURL,
 				)
+
+				if result.status == .pending {
+					postVerification.append(result)
+				}
 			}
+
+			guard !postVerification.isEmpty
+			else { break }
 
 			try await Task.sleep(for: .seconds(30))
 
@@ -194,7 +202,7 @@ extension ACMEClient {
 					remainingAuths.removeAll { $0.0 == url }
 				}
 
-				logger.debug("Auth for \(auth.identifier) is still pending verifying, retrying")
+				logger.debug("Auth for \(auth.identifier) is still pending verification, retrying")
 			}
 		}
 

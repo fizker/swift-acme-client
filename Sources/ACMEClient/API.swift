@@ -75,7 +75,7 @@ package struct API {
 				nonce: nonce,
 				accountKey: accountKey,
 				accountURL: accountURL,
-				body: nil,
+				body: .getAsPost,
 			)
 		)
 
@@ -165,7 +165,7 @@ package struct API {
 				nonce: nonce,
 				accountKey: accountKey,
 				accountURL: accountURL,
-				body: nil,
+				body: .getAsPost,
 			)
 		)
 
@@ -231,7 +231,7 @@ package struct API {
 				nonce: nonce,
 				accountKey: accountKey,
 				accountURL: accountURL,
-				body: nil
+				body: .getAsPost
 			)
 		)
 
@@ -242,16 +242,18 @@ package struct API {
 		return try await response.body.decode(using: coder)
 	}
 
-	func respondTo(_ challenge: Challenge, nonce: inout Nonce, accountKey: Key.Private, accountURL: URL) async throws {
+	func respondTo(_ challenge: Challenge, nonce: inout Nonce, accountKey: Key.Private, accountURL: URL) async throws -> Challenge {
 		let response = try await post(ACMERequest(
 			url: challenge.url,
 			nonce: nonce,
 			accountKey: accountKey,
 			accountURL: accountURL,
-			body: nil,
+			body: .emptyBody,
 		))
 		try await response.assertSuccess()
 		nonce = try response.nonce
+
+		return try await response.body.decode(using: coder)
 	}
 
 	func downloadCertificateChain(for order: Order, nonce: inout Nonce, accountKey: Key.Private, accountURL: URL) async throws -> CertificateChain {
@@ -271,7 +273,7 @@ package struct API {
 				nonce: nonce,
 				accountKey: accountKey,
 				accountURL: accountURL,
-				body: nil,
+				body: .getAsPost,
 			)
 		)
 		try await certResponse.assertSuccess()
