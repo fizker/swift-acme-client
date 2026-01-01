@@ -1,4 +1,5 @@
 import ACMEClient
+import ACMEClientModels
 import ArgumentParser
 import Foundation
 
@@ -26,6 +27,9 @@ struct CreateOrderCommand: AsyncParsableCommand {
 	@Option(name: .shortAndLong, transform: { URL(fileURLWithPath: $0) })
 	var output: URL
 
+	@Argument(transform: { try Domain($0).unwrap() })
+	var domains: [Domain]
+
 	func run() async throws {
 		let client = try await ACMEClient(
 			directory: options.directory.acme,
@@ -33,14 +37,9 @@ struct CreateOrderCommand: AsyncParsableCommand {
 			accountURL: auth.accountURL,
 		)
 
-		let certificate = try await client.requestCertificateViaDNS(covering: [
-			Domain("fizkerinc.dk")!,
-			Domain("test.fizkerinc.dk")!,
-			Domain("foo.fizkerinc.dk")!,
-		])
+		let certificate = try await client.requestCertificateViaDNS(covering: domains)
 
-		let encoder = JSONEncoder()
-		let data = try encoder.encode(certificate)
+		let data = try coder.encode(certificate)
 		try data.write(to: output)
 	}
 }
