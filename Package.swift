@@ -34,9 +34,11 @@ let package = Package(
 	],
 	dependencies: [
 		.package(url: "https://github.com/apple/swift-argument-parser", from: "1.6.2"),
+		.package(url: "https://github.com/apple/swift-certificates.git", from: "1.15.0"),
 		.package(url: "https://github.com/apple/swift-crypto.git", from: "4.1.0"),
-		.package(url: "https://github.com/fizker/swift-extensions.git", from:"1.4.0"),
+		.package(url: "https://github.com/fizker/swift-extensions.git", from:"1.5.1"),
 		.package(url: "https://github.com/fizker/swift-macro-compile-safe-init", from: "1.0.0"),
+		.package(url: "https://github.com/guykogus/SwifterJSON.git", from: "4.2.0"),
 		.package(url: "https://github.com/swift-server/async-http-client.git", from: "1.29.1"),
 		.package(url: "https://github.com/vapor/jwt-kit.git", from: "5.3.0"),
 	],
@@ -48,29 +50,39 @@ let package = Package(
 				"ACMEClientModels",
 				.product(name: "AsyncHTTPClient", package: "async-http-client"),
 				.product(name: "JWTKit", package: "jwt-kit"),
+				.product(name: "X509", package: "swift-certificates"),
 				.product(name: "Crypto", package: "swift-crypto"),
 			],
 			swiftSettings: upcomingFeatures,
 		),
 		.testTarget(
 			name: "ACMEClientTests",
-			dependencies: ["ACMEClient"],
+			dependencies: [
+				"ACMEClient",
+				.product(name: "CompileSafeInitMacro", package: "swift-macro-compile-safe-init"),
+			],
 		),
 
 		.target(
 			name: "ACMEAPIModels",
 			dependencies: [
+				.product(name: "SwifterJSON", package: "SwifterJSON"),
 			],
 			swiftSettings: upcomingFeatures,
 		),
 		.testTarget(
 			name: "ACMEAPIModelsTests",
-			dependencies: ["ACMEAPIModels"],
+			dependencies: [
+				"ACMEAPIModels",
+				.product(name: "CompileSafeInitMacro", package: "swift-macro-compile-safe-init"),
+				.product(name: "FzkExtensions", package: "swift-extensions"),
+			],
 		),
 
 		.target(
 			name: "ACMEClientModels",
 			dependencies: [
+				.product(name: "X509", package: "swift-certificates"),
 				.product(name: "FzkExtensions", package: "swift-extensions"),
 				.product(name: "CompileSafeInitMacro", package: "swift-macro-compile-safe-init"),
 			],
@@ -80,6 +92,8 @@ let package = Package(
 			name: "ACMEClientModelsTests",
 			dependencies: [
 				"ACMEClientModels",
+				.product(name: "X509", package: "swift-certificates"),
+				.product(name: "Crypto", package: "swift-crypto"),
 				.product(name: "CompileSafeInitMacro", package: "swift-macro-compile-safe-init"),
 			],
 		),

@@ -43,4 +43,13 @@ public struct Identifier: Codable, Equatable, Sendable {
 
 	/// The identifier itself.
 	public var value: String
+
+	public init(type: `Type`, value: String) {
+		self.type = type
+		self.value = value
+	}
+}
+
+extension Identifier: CustomStringConvertible {
+	public var description: String { value }
 }

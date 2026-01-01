@@ -1,5 +1,5 @@
 {
-  "originHash" : "f94cc0951e8686de9364501d160d9641f969d5a6cb43d16da24bcbd3121ce9c3",
+  "originHash" : "19bf74dac05ab1a160ff40bef8edc751b002ea2baba007445790cb81839fdaf0",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -105,8 +105,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/fizker/swift-extensions.git",
       "state" : {
-        "revision" : "c66708a1fcd0f42798f3345231edca60d60e48e5",
-        "version" : "1.4.0"
+        "revision" : "5a6354c898424f6a536d32fcf1e5bfca415c7312",
+        "version" : "1.5.1"
       }
     },
     {
@@ -233,6 +233,15 @@
       "state" : {
         "revision" : "395a77f0aa927f0ff73941d7ac35f2b46d47c9db",
         "version" : "1.6.3"
+      }
+    },
+    {
+      "identity" : "swifterjson",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/guykogus/SwifterJSON.git",
+      "state" : {
+        "revision" : "6980939e33bd58b0a472b800b24183de86b2993c",
+        "version" : "4.2.0"
       }
     }
   ],

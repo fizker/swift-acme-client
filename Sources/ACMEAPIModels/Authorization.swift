@@ -1,4 +1,4 @@
-import Foundation
+public import Foundation
 
 /// An ACME authorization object represents a server's authorization for
 /// an account to represent an identifier.  In addition to the
@@ -6,8 +6,8 @@ import Foundation
 /// as the status of the authorization (e.g., "pending", "valid", or
 /// "revoked") and which challenges were used to validate possession of
 /// the identifier.
-struct Authorization: Codable {
-	var identifier: Identifier
+public struct Authorization: Codable {
+	public var identifier: Identifier
 
 	/// The status of this authorization.
 	///
@@ -45,13 +45,13 @@ struct Authorization: Codable {
 	///              V              V              V
 	///           revoked      deactivated      expired
 	/// ```
-	var status: Status
+	public var status: Status
 
 	/// The timestamp after which the server
 	/// will consider this authorization invalid, encoded in the format
 	/// specified in [RFC3339].  This field is REQUIRED for objects with
 	/// "valid" in the "status" field.
-	var expires: Date?
+	public var expires: Date?
 
 	/// For pending authorizations,
 	/// the challenges that the client can fulfill in order to prove
@@ -62,16 +62,16 @@ struct Authorization: Codable {
 	/// client should attempt to fulfill one of these challenges, and a
 	/// server should consider any one of the challenges sufficient to
 	/// make the authorization valid.
-	var challenges: [Challenge]
+	public var challenges: [Challenge]
 
 	/// This field MUST be present and true
 	/// for authorizations created as a result of a newOrder request
 	/// containing a DNS identifier with a value that was a wildcard
 	/// domain name.  For other authorizations, it MUST be absent.
 	/// Wildcard domain names are described in Section 7.1.3.
-	var wildcard: Bool?
+	public var wildcard: Bool?
 
-	enum Status: String, Codable {
+	public enum Status: String, Codable {
 		case pending, valid, invalid, deactivated, expired, revoked
 	}
 }

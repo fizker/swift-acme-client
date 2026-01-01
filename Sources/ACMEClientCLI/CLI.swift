@@ -6,6 +6,7 @@ struct CLI: AsyncParsableCommand {
 		commandName: "acme-client",
 		subcommands: [
 			AccountCommand.self,
+			OrderCommand.self,
 		],
 	)
 }
