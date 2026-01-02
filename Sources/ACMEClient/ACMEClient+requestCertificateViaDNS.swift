@@ -96,15 +96,9 @@ extension ACMEClient {
 		} while true
 	}
 
-	/// - Returns: True if any challenges required verification.
-	private func verifyChallenges(order: Order, nonce: inout Nonce) async throws -> Bool {
-		logger.trace("Verifying challenges")
-
-		var nonDNS = [(URL, Authorization)]()
-		var remainingAuths = [(URL, Challenge)]()
-
-		let keyAuth = try KeyAuthorization(publicKey: accountKey.publicKey)
-
+	private func fetchAuthorizations(order: Order, nonce: inout Nonce) async throws -> [(url: URL, item: Authorization)] {
+		logger.trace("Fetching authorizations")
+		var auths: [(URL, Authorization)] = []
 		for url in order.authorizations {
 			let auth = try await api.authorization(
 				at: url,
@@ -112,7 +106,24 @@ extension ACMEClient {
 				accountKey: accountKey,
 				accountURL: accountURL,
 			)
+			auths.append((url, auth))
+		}
+		logger.trace("Authorizations fetched")
+		return auths
+	}
 
+	/// - Returns: True if any challenges required verification.
+	private func verifyChallenges(order: Order, nonce: inout Nonce) async throws -> Bool {
+		logger.trace("Verifying challenges")
+
+		var nonDNS = [(URL, Authorization)]()
+		var remainingAuths = [(URL, Challenge)]()
+
+		let auths = try await fetchAuthorizations(order: order, nonce: &nonce)
+
+		let keyAuth = try KeyAuthorization(publicKey: accountKey.publicKey)
+
+		for (url, auth) in auths {
 			logger.trace("Fetched auth data for \(auth.identifier)")
 
 			guard auth.status == .pending
