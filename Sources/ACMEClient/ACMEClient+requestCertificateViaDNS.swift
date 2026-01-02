@@ -96,9 +96,9 @@ extension ACMEClient {
 		} while true
 	}
 
-	private func fetchAuthorizations(order: Order, nonce: inout Nonce) async throws -> [(url: URL, item: Authorization)] {
+	private func fetchAuthorizations(order: Order, keyAuth: KeyAuthorization, nonce: inout Nonce) async throws -> [TypedAuthorization] {
 		logger.trace("Fetching authorizations")
-		var auths: [(URL, Authorization)] = []
+		var auths: [TypedAuthorization] = []
 		for url in order.authorizations {
 			let auth = try await api.authorization(
 				at: url,
@@ -106,7 +106,7 @@ extension ACMEClient {
 				accountKey: accountKey,
 				accountURL: accountURL,
 			)
-			auths.append((url, auth))
+			auths.append(try TypedAuthorization(auth, url: url, keyAuth: keyAuth))
 		}
 		logger.trace("Authorizations fetched")
 		return auths
@@ -116,14 +116,14 @@ extension ACMEClient {
 	private func verifyChallenges(order: Order, nonce: inout Nonce) async throws -> Bool {
 		logger.trace("Verifying challenges")
 
-		var nonDNS = [(URL, Authorization)]()
-		var remainingAuths = [(URL, Challenge)]()
-
-		let auths = try await fetchAuthorizations(order: order, nonce: &nonce)
+		var nonDNS = [TypedAuthorization]()
+		var remainingAuths = [Verification]()
 
 		let keyAuth = try KeyAuthorization(publicKey: accountKey.publicKey)
 
-		for (url, auth) in auths {
+		let auths = try await fetchAuthorizations(order: order, keyAuth: keyAuth, nonce: &nonce)
+
+		for auth in auths {
 			logger.trace("Fetched auth data for \(auth.identifier)")
 
 			guard auth.status == .pending
@@ -132,39 +132,30 @@ extension ACMEClient {
 				continue
 			}
 
-			guard let dnsChallenge = auth.challenges.first(where: { $0.type == .dns })
+			guard let dnsChallenge = auth.verify(via: .dns)
 			else {
-				nonDNS.append((url, auth))
+				nonDNS.append(auth)
 				continue
 			}
 
-			remainingAuths.append((url, dnsChallenge))
+			remainingAuths.append(dnsChallenge)
 
-			let domain = auth.identifier.value
-			let txt = if domain.hasPrefix("*") {
-				"_acme-challenge\(domain[domain.index(after: domain.startIndex)...])"
-			} else {
-				"_acme-challenge.\(domain)"
-			}
+			guard case let .dns(x) = dnsChallenge.challenge
+			else { fatalError() }
 
-			let digest = keyAuth.digest(for: dnsChallenge)
-			print("""
-			For \(domain), add a TXT record at \(txt) containing:
-			- \(digest.base64urlEncodedString())
-			- Token: \(dnsChallenge.token)
-			""")
+			print(x.directions)
 		}
 
 		if !nonDNS.isEmpty {
 			print("The following identifiers did not support DNS")
 
-			for (_, auth) in nonDNS {
+			for auth in nonDNS {
 				print("--------")
 				print("Auth for \(auth.identifier.value) cannot be automated")
 				print("There are \(auth.challenges.count) challenges available")
 				for idx in auth.challenges.indices {
 					let challenge = auth.challenges[idx]
-					print("\(idx): Challenge:\n\(challenge, indentedWith: "- ")")
+					print("\(idx): \(challenge.directions)")
 				}
 			}
 		}
@@ -186,15 +177,15 @@ extension ACMEClient {
 						throw CertificateChallengeError.invalidInputCount
 					}
 
-					remainingAuths += try nonDNS.map { (url, auth) in
+					remainingAuths += try nonDNS.map { auth in
 						let choice = chosenAuth.removeFirst()
-						guard let challenge = auth.challenges[safe: choice]
+						guard let challenge = auth.verify(viaIndex: choice)
 						else {
 							print("Choice for \(auth.identifier) was did not match option")
 							throw CertificateChallengeError.invalidInputChoice
 						}
 
-						return (url, challenge)
+						return challenge
 					}
 
 					break readKeyboard
@@ -208,15 +199,15 @@ extension ACMEClient {
 
 		while !remainingAuths.isEmpty {
 			var postVerification: [Challenge] = []
-			for (_, challenge) in remainingAuths {
+			for verification in remainingAuths {
 				let result = try await api.respondTo(
-					challenge,
+					verification.challenge,
 					nonce: &nonce,
 					accountKey: accountKey,
 					accountURL: accountURL,
 				)
 
-				logger.debug("Received response to challenge with token \(challenge.token): \(result)")
+				logger.debug("Received response to challenge with token \(verification.challenge.token): \(result)")
 
 				if result.status == .pending {
 					postVerification.append(result)
@@ -228,10 +219,10 @@ extension ACMEClient {
 
 			try await Task.sleep(for: .seconds(30))
 
-			for (url, _) in remainingAuths {
-				let auth = try await api.authorization(at: url, nonce: &nonce, accountKey: accountKey, accountURL: accountURL)
+			for verification in remainingAuths {
+				let auth = try await api.authorization(at: verification.auth.url, nonce: &nonce, accountKey: accountKey, accountURL: accountURL)
 				if auth.status != .pending {
-					remainingAuths.removeAll { $0.0 == url }
+					remainingAuths.removeAll { $0.auth.url == verification.auth.url }
 				}
 
 				logger.debug("Auth for \(auth.identifier) is still pending verification, retrying")

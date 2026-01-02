@@ -242,9 +242,42 @@ package struct API {
 		return try await response.body.decode(using: coder)
 	}
 
-	func respondTo(_ challenge: Challenge, nonce: inout Nonce, accountKey: Key.Private, accountURL: URL) async throws -> Challenge {
+	func respondTo(
+		_ challenge: Challenge,
+		nonce: inout Nonce,
+		accountKey: Key.Private,
+		accountURL: URL,
+	) async throws -> Challenge {
+		try await respondTo(
+			challengeURL: challenge.url,
+			nonce: &nonce,
+			accountKey: accountKey,
+			accountURL: accountURL,
+		)
+	}
+
+	func respondTo(
+		_ challenge: TypedChallenge,
+		nonce: inout Nonce,
+		accountKey: Key.Private,
+		accountURL: URL,
+	) async throws -> Challenge {
+		try await respondTo(
+			challengeURL: challenge.url,
+			nonce: &nonce,
+			accountKey: accountKey,
+			accountURL: accountURL,
+		)
+	}
+
+	private func respondTo(
+		challengeURL: URL,
+		nonce: inout Nonce,
+		accountKey: Key.Private,
+		accountURL: URL,
+	) async throws -> Challenge {
 		let response = try await post(ACMERequest(
-			url: challenge.url,
+			url: challengeURL,
 			nonce: nonce,
 			accountKey: accountKey,
 			accountURL: accountURL,
