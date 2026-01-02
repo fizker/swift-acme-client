@@ -1,14 +1,14 @@
-import ACMEAPIModels
-import Foundation
+public import ACMEAPIModels
+public import Foundation
 import FzkExtensions
 
-struct TypedAuthorization {
-	var identifier: Identifier
-	var challenges: [TypedChallenge]
-	var url: URL
-	var isWildcard: Bool
-	var expires: Date?
-	var status: Authorization.Status
+public struct TypedAuthorization {
+	public let identifier: Identifier
+	public let challenges: [TypedChallenge]
+	public let url: URL
+	public let isWildcard: Bool
+	public let expires: Date?
+	public let status: Authorization.Status
 
 	init(_ auth: Authorization, url: URL, keyAuth: KeyAuthorization) throws {
 		self.url = url
@@ -19,14 +19,14 @@ struct TypedAuthorization {
 		self.expires = auth.expires
 	}
 
-	func verify(via type: Challenge.`Type`) -> Verification? {
+	public func verify(via type: Challenge.`Type`) -> Verification? {
 		guard let challenge = challenges.first(where: { $0.type == type })
 		else { return nil }
 
 		return Verification(challenge: challenge, auth: self)
 	}
 
-	func verify(viaIndex index: Int) -> Verification? {
+	public func verify(viaIndex index: Int) -> Verification? {
 		guard let challenge = challenges[safe: index]
 		else { return nil }
 
@@ -37,7 +37,7 @@ struct TypedAuthorization {
 /// A verification for an `Authorization`.
 ///
 /// This is created through the ``TypedAuthorization``.
-struct Verification {
-	var challenge: TypedChallenge
-	var auth: TypedAuthorization
+public struct Verification {
+	public let challenge: TypedChallenge
+	public let auth: TypedAuthorization
 }

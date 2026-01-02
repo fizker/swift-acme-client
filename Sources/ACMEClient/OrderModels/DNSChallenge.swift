@@ -1,14 +1,14 @@
-import ACMEAPIModels
-import Crypto
-import Foundation
+public import ACMEAPIModels
+public import Crypto
+public import Foundation
 
-struct DNSChallenge: CustomStringConvertible {
-	var url: URL
-	var token: String
-	var type: Challenge.`Type` { .dns }
-	var identifier: Identifier
+public struct DNSChallenge: CustomStringConvertible {
+	public let url: URL
+	public let token: String
+	public var type: Challenge.`Type` { .dns }
+	public let identifier: Identifier
 
-	var txt: TXT
+	public let txt: TXT
 
 	init(_ challenge: Challenge, identifier: Identifier, keyAuth: KeyAuthorization) throws {
 		guard challenge.type == .dns
@@ -32,7 +32,7 @@ struct DNSChallenge: CustomStringConvertible {
 	}
 
 	/// The directions for how to pass this challenge.
-	var directions: String {
+	public var directions: String {
 		"""
 		For \(identifier.value), add a TXT record at \(txt.domain) containing:
 		- \(txt.value.base64urlEncodedString())
@@ -40,12 +40,12 @@ struct DNSChallenge: CustomStringConvertible {
 		"""
 	}
 
-	var description: String {
+	public var description: String {
 		"DNS: \(directions)"
 	}
 
-	struct TXT {
-		var domain: String
-		var value: SHA256Digest
+	public struct TXT {
+		public let domain: String
+		public let value: SHA256Digest
 	}
 }

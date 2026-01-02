@@ -1,11 +1,11 @@
-import ACMEAPIModels
-import Foundation
+public import ACMEAPIModels
+public import Foundation
 
-enum TypedChallenge: CustomStringConvertible {
+public enum TypedChallenge: CustomStringConvertible {
 	case dns(DNSChallenge)
 	case other(Challenge)
 
-	var url: URL {
+	public var url: URL {
 		switch self {
 		case let .dns(challenge):
 			challenge.url
@@ -14,7 +14,7 @@ enum TypedChallenge: CustomStringConvertible {
 		}
 	}
 
-	var type: Challenge.`Type` {
+	public var type: Challenge.`Type` {
 		switch self {
 		case let .dns(challenge):
 			challenge.type
@@ -23,7 +23,7 @@ enum TypedChallenge: CustomStringConvertible {
 		}
 	}
 
-	var token: String {
+	public var token: String {
 		switch self {
 		case let .dns(challenge):
 			challenge.token
@@ -33,7 +33,7 @@ enum TypedChallenge: CustomStringConvertible {
 	}
 
 	/// The directions for how to pass this challenge.
-	var directions: String {
+	public var directions: String {
 		switch self {
 		case let .dns(challenge):
 			challenge.directions
@@ -42,7 +42,7 @@ enum TypedChallenge: CustomStringConvertible {
 		}
 	}
 
-	var description: String { directions }
+	public var description: String { directions }
 }
 
 extension Authorization {

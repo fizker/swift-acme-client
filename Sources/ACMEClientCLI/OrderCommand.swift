@@ -37,9 +37,20 @@ struct CreateOrderCommand: AsyncParsableCommand {
 			accountURL: auth.accountURL,
 		)
 
-		let certificate = try await client.requestCertificateViaDNS(covering: domains)
+		let certificate = try await client.requestCertificate(
+			covering: domains,
+			authHandler: client.handleDNSChallengesViaCLI,
+		)
 
 		let data = try coder.encode(certificate)
 		try data.write(to: output)
+	}
+
+	// This is only included to omit logger property
+	enum CodingKeys: CodingKey {
+		case options
+		case auth
+		case output
+		case domains
 	}
 }
