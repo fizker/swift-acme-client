@@ -1,12 +1,10 @@
-public import Foundation
-
 public struct NewAccountRequest: Codable {
 	/// An array of URLs that the server can use to contact the client for issues related to this account.
 	///
 	/// For example, the server may wish to notify the client about server-initiated revocation or certificate expiration.
 	///
 	/// For information on supported URL schemes, see [Section 7.3](https://datatracker.ietf.org/doc/html/rfc8555#section-7.3).
-	public var contact: [URL]?
+	public var contact: [EmailURL]?
 
 	/// Including this field in a newAccount request, with a value of true, indicates the client's agreement with the terms of service.  This field cannot be updated by the client.
 	public var termsOfServiceAgreed: Bool?
@@ -17,7 +15,7 @@ public struct NewAccountRequest: Codable {
 	public var externalAccountBinding: ExternalAccountBinding?
 
 	public init(
-		contact: [URL]? = nil,
+		contact: [EmailURL]? = nil,
 		termsOfServiceAgreed: Bool? = nil,
 		externalAccountBinding: ExternalAccountBinding? = nil,
 	) {

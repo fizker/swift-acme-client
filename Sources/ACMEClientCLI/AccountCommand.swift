@@ -127,20 +127,6 @@ struct UpdateAccountCommand: AsyncParsableCommand {
 	}
 }
 
-func parseEmailURL(value: String) throws -> URL {
-	let emailRegex = /(mailto:)?.+@.+\..+/
-	guard try emailRegex.firstMatch(in: value) != nil
-	else {
-		throw ValidationError("Expected a mailto: URL")
-	}
-	var value = value
-	if !value.hasPrefix("mailto:") {
-		value = "mailto:\(value)"
-	}
-	return try URL(string: value).unwrap()
-}
-
-
 struct AccountDetailsOptions: ParsableArguments {
 	@Option(
 		name: .shortAndLong,
@@ -148,7 +134,7 @@ struct AccountDetailsOptions: ParsableArguments {
 		help: """
 		An e-mail address for the contact. This parameter can be repeated as needed.
 		""",
-		transform: parseEmailURL(value:),
+		transform: EmailURL.init(_:),
 	)
-	var contact: [URL]
+	var contact: [EmailURL]
 }
