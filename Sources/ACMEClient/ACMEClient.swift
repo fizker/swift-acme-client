@@ -1,13 +1,13 @@
 import ACMEAPIModels
 public import ACMEClientModels
-public import Foundation
+package import Foundation
 import Logging
 
 let `1mb` = 1024 * 1024
 
 public class ACMEClient {
 	public var account: ACMEClientModels.Account {
-		.init(key: .init(accountKey), url: accountURL)
+		.init(key: accountKey, url: accountURL)
 	}
 	let accountKey: Key.Private
 	let accountURL: URL
@@ -15,7 +15,11 @@ public class ACMEClient {
 	var nonce: Nonce
 	let logger = Logger(label: "acme-client")
 
-	public init(directory: ACMEDirectory, accountKey: Key.Private, accountURL: URL?) async throws {
+	public convenience init(directory: ACMEDirectory, account: ACMEClientModels.Account) async throws {
+		try await self.init(directory: directory, accountKey: account.key, accountURL: account.url)
+	}
+
+	package init(directory: ACMEDirectory, accountKey: Key.Private, accountURL: URL?) async throws {
 		self.accountKey = accountKey
 
 		logger.trace("Requesting directory")

@@ -1,12 +1,12 @@
-package import ACMEAPIModels
-package import ACMEClientModels
-package import AsyncHTTPClient
+public import ACMEAPIModels
+public import ACMEClientModels
+public import AsyncHTTPClient
 package import Foundation
 import FzkExtensions
 import Logging
-import X509
+public import X509
 
-package struct API {
+public struct API {
 	package typealias Account = ACMEAPIModels.Account
 
 	let httpClient: HTTPClient
@@ -18,7 +18,7 @@ package struct API {
 		self.directory = directory
 	}
 
-	package init(httpClient: HTTPClient = .shared, directory: ACMEDirectory) async throws {
+	public init(httpClient: HTTPClient = .shared, directory: ACMEDirectory) async throws {
 		self.httpClient = httpClient
 		self.directory = try await Self.fetchDirectory(for: directory, using: httpClient)
 	}
@@ -89,7 +89,7 @@ package struct API {
 		)
 	}
 
-	package func createAccount(nonce: inout Nonce, accountKey: Key.Private, request: NewAccountRequest) async throws -> (account: Account, url: URL)? {
+	package func createAccount(nonce: inout Nonce, accountKey: Key.Private, request: NewAccountRequest) async throws -> (account: Account, url: URL) {
 		let response = try await post(
 			ACMERequest(
 				url: directory.newAccount,
@@ -110,6 +110,12 @@ package struct API {
 				.flatMap(URL.init(string:))
 				.unwrap(orThrow: ACMEError.accountURLMissing),
 		)
+	}
+
+	public func createAccount(accountKey: Key.Private, request: NewAccountRequest) async throws -> ACMEClientModels.Account {
+		var nonce = try await fetchNonce()
+		let response = try await createAccount(nonce: &nonce, accountKey: accountKey, request: request)
+		return .init(key: accountKey, url: response.url)
 	}
 
 	@discardableResult
