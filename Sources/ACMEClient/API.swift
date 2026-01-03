@@ -41,6 +41,16 @@ public struct API {
 
 	// MARK: - Account
 
+	/// Fetches the account for the given account key.
+	///
+	/// - parameter accountKey: The private key that is associated with the account.
+	/// - returns: The `Account` associated with the given `Key.Private`.
+	public func fetchAccount(accountKey: Key.Private) async throws -> ACMEClientModels.Account {
+		var nonce = try await fetchNonce()
+		let url = try await fetchAccountURL(nonce: &nonce, accountKey: accountKey)
+		return .init(key: accountKey, url: url)
+	}
+
 	package func fetchAccountURL(nonce: inout Nonce, accountKey: Key.Private) async throws -> URL {
 		let (accountURL, newNonce) = try await fetchAccountURL(nonce: nonce, accountKey: accountKey)
 		nonce = newNonce
@@ -112,6 +122,23 @@ public struct API {
 		)
 	}
 
+	/// Creates a new `Account` and private key.
+	///
+	/// - parameter request: The request required for creating a new account.
+	/// - returns: The created account.
+	public func createAccount(request: NewAccountRequest) async throws -> ACMEClientModels.Account {
+		var nonce = try await fetchNonce()
+		let accountKey = Key.Private()
+		let response = try await createAccount(nonce: &nonce, accountKey: accountKey, request: request)
+		return .init(key: accountKey, url: response.url)
+	}
+
+	/// Creates a new `Account` using the given key.
+	///
+	/// - parameters:
+	///   - accountKey: The private key for the account.
+	///   - request: The request required for creating a new account.
+	/// - returns: The created account.
 	public func createAccount(accountKey: Key.Private, request: NewAccountRequest) async throws -> ACMEClientModels.Account {
 		var nonce = try await fetchNonce()
 		let response = try await createAccount(nonce: &nonce, accountKey: accountKey, request: request)

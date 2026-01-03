@@ -1,5 +1,6 @@
 import ACMEAPIModels
 import ACMEClient
+import ACMEClientModels
 import ArgumentParser
 import Foundation
 import FzkExtensions
@@ -85,11 +86,7 @@ struct CreateAccountCommand: AsyncParsableCommand {
 		)
 		let api = try await API(directory: options.directory.acme)
 		var nonce = try await api.fetchNonce()
-		guard let account = try await api.createAccount(nonce: &nonce, accountKey: auth.accountKey, request: request)
-		else {
-			print("Failed to create account")
-			return
-		}
+		let account = try await api.createAccount(nonce: &nonce, accountKey: auth.accountKey, request: request)
 
 		print("Account: \(account.account)")
 		print("URL: \(account.url)")

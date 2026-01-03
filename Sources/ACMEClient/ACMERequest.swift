@@ -1,4 +1,5 @@
 import ACMEAPIModels
+import ACMEClientModels
 import Crypto
 import Foundation
 import JWTKit
