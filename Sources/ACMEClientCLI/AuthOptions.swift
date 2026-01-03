@@ -1,4 +1,5 @@
 import ACMEClient
+import ACMEClientModels
 import ArgumentParser
 import Foundation
 

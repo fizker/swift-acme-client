@@ -30,8 +30,16 @@ import JWTKit
 /// | certificate       | certificate url                |              |
 /// +-------------------+--------------------------------+--------------+
 /// ```
+
+private let pollDelay: Duration = .seconds(10)
 extension ACMEClient {
-	public func requestCertificateViaDNS(covering domains: [Domain]) async throws -> CertificateAndPrivateKey {
+	/// A function that should handle authorizations by picking and meeting a challenge for each authorization.
+	public typealias AuthorizationHandler = ([TypedAuthorization]) async throws -> [Verification]
+
+	public func requestCertificate(
+		covering domains: [Domain],
+		authHandler: AuthorizationHandler,
+	) async throws -> CertificateAndPrivateKey {
 		logger.trace("Creating order")
 
 		var nonce = nonce
@@ -49,7 +57,11 @@ extension ACMEClient {
 		guard order.status != .invalid
 		else { throw CustomError(message: "Could not initiate order") }
 
-		let orderToFinalize = try await verifyChallenges(order: order, nonce: &nonce)
+		let orderToFinalize = try await verifyChallenges(
+			order: order,
+			authHandler: authHandler,
+			nonce: &nonce,
+		)
 			? try await pollForAuthCompleted(orderURL: orderURL)
 			: order
 
@@ -82,8 +94,8 @@ extension ACMEClient {
 			)
 			switch updatedOrder.status {
 			case .pending:
-				logger.debug("Sleeping 10s before polling again")
-				try await Task.sleep(for: .seconds(10))
+				logger.debug("Sleeping \(pollDelay) before polling again")
+				try await Task.sleep(for: pollDelay)
 				break
 			case .ready:
 				// wat - this should only happen after we finalize
@@ -96,15 +108,9 @@ extension ACMEClient {
 		} while true
 	}
 
-	/// - Returns: True if any challenges required verification.
-	private func verifyChallenges(order: Order, nonce: inout Nonce) async throws -> Bool {
-		logger.trace("Verifying challenges")
-
-		var nonDNS = [(URL, Authorization)]()
-		var remainingAuths = [(URL, Challenge)]()
-
-		let keyAuth = try KeyAuthorization(publicKey: accountKey.publicKey)
-
+	private func fetchAuthorizations(order: Order, keyAuth: KeyAuthorization, nonce: inout Nonce) async throws -> [TypedAuthorization] {
+		logger.trace("Fetching authorizations")
+		var auths: [TypedAuthorization] = []
 		for url in order.authorizations {
 			let auth = try await api.authorization(
 				at: url,
@@ -112,100 +118,49 @@ extension ACMEClient {
 				accountKey: accountKey,
 				accountURL: accountURL,
 			)
-
-			logger.trace("Fetched auth data for \(auth.identifier)")
-
-			guard auth.status == .pending
-			else {
-				logger.debug("Auth for \(auth.identifier) is \(auth.status), skipping")
-				continue
-			}
-
-			guard let dnsChallenge = auth.challenges.first(where: { $0.type == .dns })
-			else {
-				nonDNS.append((url, auth))
-				continue
-			}
-
-			remainingAuths.append((url, dnsChallenge))
-
-			let domain = auth.identifier.value
-			let txt = if domain.hasPrefix("*") {
-				"_acme-challenge\(domain[domain.index(after: domain.startIndex)...])"
-			} else {
-				"_acme-challenge.\(domain)"
-			}
-
-			let digest = keyAuth.digest(for: dnsChallenge)
-			print("""
-			For \(domain), add a TXT record at \(txt) containing:
-			- \(digest.base64urlEncodedString())
-			- Token: \(dnsChallenge.token)
-			""")
+			auths.append(try TypedAuthorization(auth, url: url, keyAuth: keyAuth))
 		}
+		logger.trace("Authorizations fetched")
+		return auths
+	}
 
-		if !nonDNS.isEmpty {
-			print("The following identifiers did not support DNS")
+	/// - Returns: True if any challenges required verification.
+	private func verifyChallenges(
+		order: Order,
+		authHandler: AuthorizationHandler,
+		nonce: inout Nonce,
+	) async throws -> Bool {
+		logger.trace("Verifying challenges")
 
-			for (_, auth) in nonDNS {
-				print("--------")
-				print("Auth for \(auth.identifier.value) cannot be automated")
-				print("There are \(auth.challenges.count) challenges available")
-				for idx in auth.challenges.indices {
-					let challenge = auth.challenges[idx]
-					print("\(idx): Challenge:\n\(challenge, indentedWith: "- ")")
-				}
-			}
-		}
+		let keyAuth = try KeyAuthorization(publicKey: accountKey.publicKey)
 
-		if nonDNS.isEmpty {
-			guard !remainingAuths.isEmpty
-			else { return false }
+		let auths = try await fetchAuthorizations(order: order, keyAuth: keyAuth, nonce: &nonce)
 
-			awaitKeyboardInput()
-		} else {
-			readKeyboard: while true {
-				do {
-					var chosenAuth = try awaitKeyboardInput(message: "Enter the chosen non-DNS solution as a comma-separated line")
-					.split(separator: ",")
-					.map { try Int("\($0)").unwrap() }
+		let pendingAuths = auths.filter { $0.status == .pending }
 
-					guard chosenAuth.count == nonDNS.count
-					else {
-						throw CertificateChallengeError.invalidInputCount
-					}
+		guard !pendingAuths.isEmpty
+		else { return false }
 
-					remainingAuths += try nonDNS.map { (url, auth) in
-						let choice = chosenAuth.removeFirst()
-						guard let challenge = auth.challenges[safe: choice]
-						else {
-							print("Choice for \(auth.identifier) was did not match option")
-							throw CertificateChallengeError.invalidInputChoice
-						}
+		logger.trace("Informing user about challenges to verify")
 
-						return (url, challenge)
-					}
+		var remainingAuths: [Verification] = try await authHandler(pendingAuths)
 
-					break readKeyboard
-				} catch {
-					print("The input should be comma-separated numbers matching the number of non-DNS challenges, i.e. 1,4,2")
-				}
-			}
-		}
+		guard remainingAuths.map(\.auth.url.absoluteString).sorted() == pendingAuths.map(\.url.absoluteString).sorted()
+		else { throw CertificateChallengeError.authorizationsUnhandled }
 
 		logger.trace("User thinks challenges are ready for verification. Informing ACME server")
 
 		while !remainingAuths.isEmpty {
 			var postVerification: [Challenge] = []
-			for (_, challenge) in remainingAuths {
+			for verification in remainingAuths {
 				let result = try await api.respondTo(
-					challenge,
+					verification.challenge,
 					nonce: &nonce,
 					accountKey: accountKey,
 					accountURL: accountURL,
 				)
 
-				logger.debug("Received response to challenge with token \(challenge.token): \(result)")
+				logger.debug("Received response to challenge with token \(verification.challenge.token): \(result)")
 
 				if result.status == .pending {
 					postVerification.append(result)
@@ -215,12 +170,12 @@ extension ACMEClient {
 			guard !postVerification.isEmpty
 			else { break }
 
-			try await Task.sleep(for: .seconds(30))
+			try await Task.sleep(for: pollDelay)
 
-			for (url, _) in remainingAuths {
-				let auth = try await api.authorization(at: url, nonce: &nonce, accountKey: accountKey, accountURL: accountURL)
+			for verification in remainingAuths {
+				let auth = try await api.authorization(at: verification.auth.url, nonce: &nonce, accountKey: accountKey, accountURL: accountURL)
 				if auth.status != .pending {
-					remainingAuths.removeAll { $0.0 == url }
+					remainingAuths.removeAll { $0.auth.url == verification.auth.url }
 				}
 
 				logger.debug("Auth for \(auth.identifier) is still pending verification, retrying")
@@ -231,8 +186,10 @@ extension ACMEClient {
 	}
 }
 
-enum CertificateChallengeError: Error {
+public enum CertificateChallengeError: Error {
 	case invalidInputCount
 	case invalidInputChoice
+	/// The verifications returned by the AuthorizationHandler does not match the authorizations given.
+	case authorizationsUnhandled
 	case orderFailed
 }

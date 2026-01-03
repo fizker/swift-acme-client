@@ -1,12 +1,15 @@
-package import ACMEAPIModels
-package import ACMEClientModels
-package import AsyncHTTPClient
+public import ACMEAPIModels
+public import ACMEClientModels
+public import AsyncHTTPClient
 package import Foundation
 import FzkExtensions
 import Logging
 import X509
 
-package struct API {
+/// The `API` for communicating with the ACME server.
+public struct API {
+	package typealias Account = ACMEAPIModels.Account
+
 	let httpClient: HTTPClient
 	let directory: Directory
 	let logger = Logger(label: "acme-client.api")
@@ -16,7 +19,12 @@ package struct API {
 		self.directory = directory
 	}
 
-	package init(httpClient: HTTPClient = .shared, directory: ACMEDirectory) async throws {
+	/// Creates a new API against the specificed directory.
+	///
+	/// - parameters:
+	///   - httpClient: The `HTTPClient` to use for communicating with the ACME server.
+	///   - directory: The directory for the ACME server.
+	public init(httpClient: HTTPClient = .shared, directory: ACMEDirectory) async throws {
 		self.httpClient = httpClient
 		self.directory = try await Self.fetchDirectory(for: directory, using: httpClient)
 	}
@@ -38,6 +46,16 @@ package struct API {
 	}
 
 	// MARK: - Account
+
+	/// Fetches the account for the given account key.
+	///
+	/// - parameter accountKey: The private key that is associated with the account.
+	/// - returns: The `Account` associated with the given `Key.Private`.
+	public func fetchAccount(accountKey: Key.Private) async throws -> ACMEClientModels.Account {
+		var nonce = try await fetchNonce()
+		let url = try await fetchAccountURL(nonce: &nonce, accountKey: accountKey)
+		return .init(key: accountKey, url: url)
+	}
 
 	package func fetchAccountURL(nonce: inout Nonce, accountKey: Key.Private) async throws -> URL {
 		let (accountURL, newNonce) = try await fetchAccountURL(nonce: nonce, accountKey: accountKey)
@@ -87,7 +105,7 @@ package struct API {
 		)
 	}
 
-	package func createAccount(nonce: inout Nonce, accountKey: Key.Private, request: NewAccountRequest) async throws -> (account: Account, url: URL)? {
+	package func createAccount(nonce: inout Nonce, accountKey: Key.Private, request: NewAccountRequest) async throws -> (account: Account, url: URL) {
 		let response = try await post(
 			ACMERequest(
 				url: directory.newAccount,
@@ -108,6 +126,29 @@ package struct API {
 				.flatMap(URL.init(string:))
 				.unwrap(orThrow: ACMEError.accountURLMissing),
 		)
+	}
+
+	/// Creates a new `Account` and private key.
+	///
+	/// - parameter request: The request required for creating a new account.
+	/// - returns: The created account.
+	public func createAccount(request: NewAccountRequest) async throws -> ACMEClientModels.Account {
+		var nonce = try await fetchNonce()
+		let accountKey = Key.Private()
+		let response = try await createAccount(nonce: &nonce, accountKey: accountKey, request: request)
+		return .init(key: accountKey, url: response.url)
+	}
+
+	/// Creates a new `Account` using the given key.
+	///
+	/// - parameters:
+	///   - accountKey: The private key for the account.
+	///   - request: The request required for creating a new account.
+	/// - returns: The created account.
+	public func createAccount(accountKey: Key.Private, request: NewAccountRequest) async throws -> ACMEClientModels.Account {
+		var nonce = try await fetchNonce()
+		let response = try await createAccount(nonce: &nonce, accountKey: accountKey, request: request)
+		return .init(key: accountKey, url: response.url)
 	}
 
 	@discardableResult
@@ -242,9 +283,42 @@ package struct API {
 		return try await response.body.decode(using: coder)
 	}
 
-	func respondTo(_ challenge: Challenge, nonce: inout Nonce, accountKey: Key.Private, accountURL: URL) async throws -> Challenge {
+	func respondTo(
+		_ challenge: Challenge,
+		nonce: inout Nonce,
+		accountKey: Key.Private,
+		accountURL: URL,
+	) async throws -> Challenge {
+		try await respondTo(
+			challengeURL: challenge.url,
+			nonce: &nonce,
+			accountKey: accountKey,
+			accountURL: accountURL,
+		)
+	}
+
+	func respondTo(
+		_ challenge: TypedChallenge,
+		nonce: inout Nonce,
+		accountKey: Key.Private,
+		accountURL: URL,
+	) async throws -> Challenge {
+		try await respondTo(
+			challengeURL: challenge.url,
+			nonce: &nonce,
+			accountKey: accountKey,
+			accountURL: accountURL,
+		)
+	}
+
+	private func respondTo(
+		challengeURL: URL,
+		nonce: inout Nonce,
+		accountKey: Key.Private,
+		accountURL: URL,
+	) async throws -> Challenge {
 		let response = try await post(ACMERequest(
-			url: challenge.url,
+			url: challengeURL,
 			nonce: nonce,
 			accountKey: accountKey,
 			accountURL: accountURL,
