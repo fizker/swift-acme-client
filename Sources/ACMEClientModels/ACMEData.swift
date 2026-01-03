@@ -2,11 +2,17 @@ import Foundation
 import X509
 
 /// The data consumed and produced by the ACMEClient during ACME operations.
-struct ACMEData: Codable {
+public struct ACMEData: Codable {
 	/// The directory that the data is validated against.
-	var directory: ACMEDirectory
+	public var directory: ACMEDirectory
 	/// The account registered with the ACME server.
-	var account: Account?
+	public var account: Account?
 	/// The certificate that have been created.
-	var certificate: CertificateAndPrivateKey?
+	public var certificate: CertificateAndPrivateKey?
+
+	public init(directory: ACMEDirectory, account: Account? = nil, certificate: CertificateAndPrivateKey? = nil) {
+		self.directory = directory
+		self.account = account
+		self.certificate = certificate
+	}
 }
