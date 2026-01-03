@@ -7,6 +7,8 @@ import Logging
 import X509
 
 package struct API {
+	package typealias Account = ACMEAPIModels.Account
+
 	let httpClient: HTTPClient
 	let directory: Directory
 	let logger = Logger(label: "acme-client.api")
