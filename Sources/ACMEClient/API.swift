@@ -4,8 +4,9 @@ public import AsyncHTTPClient
 package import Foundation
 import FzkExtensions
 import Logging
-public import X509
+import X509
 
+/// The `API` for communicating with the ACME server.
 public struct API {
 	package typealias Account = ACMEAPIModels.Account
 
@@ -18,6 +19,11 @@ public struct API {
 		self.directory = directory
 	}
 
+	/// Creates a new API against the specificed directory.
+	///
+	/// - parameters:
+	///   - httpClient: The `HTTPClient` to use for communicating with the ACME server.
+	///   - directory: The directory for the ACME server.
 	public init(httpClient: HTTPClient = .shared, directory: ACMEDirectory) async throws {
 		self.httpClient = httpClient
 		self.directory = try await Self.fetchDirectory(for: directory, using: httpClient)

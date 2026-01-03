@@ -38,6 +38,8 @@ public struct TypedAuthorization {
 ///
 /// This is created through the ``TypedAuthorization``.
 public struct Verification {
+	/// The challenge that should be verified.
 	public let challenge: TypedChallenge
+	/// The authorization that issued the challenge.
 	public let auth: TypedAuthorization
 }

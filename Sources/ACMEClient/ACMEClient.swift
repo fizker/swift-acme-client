@@ -15,6 +15,15 @@ public class ACMEClient {
 	var nonce: Nonce
 	let logger = Logger(label: "acme-client")
 
+	/// Creates a new ACMEClient.
+	///
+	/// This needs an account to already be created and registered with the server.
+	/// The ``API/createAccount(request:)`` and ``API/fetchAccount(accountKey:)``
+	/// functions can be used to create the `Account`.
+	///
+	/// - parameters:
+	///   - directory: The directory of the server.
+	///   - account: The account to use.
 	public convenience init(directory: ACMEDirectory, account: ACMEClientModels.Account) async throws {
 		try await self.init(directory: directory, accountKey: account.key, accountURL: account.url)
 	}
