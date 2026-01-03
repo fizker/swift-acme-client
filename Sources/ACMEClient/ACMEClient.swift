@@ -6,6 +6,9 @@ import Logging
 let `1mb` = 1024 * 1024
 
 public class ACMEClient {
+	public var account: ACMEClientModels.Account {
+		.init(key: .init(accountKey), url: accountURL)
+	}
 	let accountKey: Key.Private
 	let accountURL: URL
 	let api: API
