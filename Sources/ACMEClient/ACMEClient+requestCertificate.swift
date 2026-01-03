@@ -30,6 +30,8 @@ import JWTKit
 /// | certificate       | certificate url                |              |
 /// +-------------------+--------------------------------+--------------+
 /// ```
+
+private let pollDelay: Duration = .seconds(10)
 extension ACMEClient {
 	/// A function that should handle authorizations by picking and meeting a challenge for each authorization.
 	public typealias AuthorizationHandler = ([TypedAuthorization]) async throws -> [Verification]
@@ -92,8 +94,8 @@ extension ACMEClient {
 			)
 			switch updatedOrder.status {
 			case .pending:
-				logger.debug("Sleeping 10s before polling again")
-				try await Task.sleep(for: .seconds(10))
+				logger.debug("Sleeping \(pollDelay) before polling again")
+				try await Task.sleep(for: pollDelay)
 				break
 			case .ready:
 				// wat - this should only happen after we finalize
@@ -168,7 +170,7 @@ extension ACMEClient {
 			guard !postVerification.isEmpty
 			else { break }
 
-			try await Task.sleep(for: .seconds(30))
+			try await Task.sleep(for: pollDelay)
 
 			for verification in remainingAuths {
 				let auth = try await api.authorization(at: verification.auth.url, nonce: &nonce, accountKey: accountKey, accountURL: accountURL)
