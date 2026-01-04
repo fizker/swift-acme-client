@@ -1,7 +1,7 @@
 public import Foundation
 import FzkExtensions
 
-public struct EmailURL {
+public struct EmailURL: Equatable, Sendable {
 	public let url: URL
 
 	public init(_ url: URL) throws(ValidationError) {

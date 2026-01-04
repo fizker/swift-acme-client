@@ -1,7 +1,7 @@
 public import Foundation
 public import X509
 
-public struct CertificateData: Codable, Equatable, Hashable {
+public struct CertificateData: Codable, Equatable, Hashable, Sendable {
 	/// The certificate.
 	public let certificate: Certificate
 

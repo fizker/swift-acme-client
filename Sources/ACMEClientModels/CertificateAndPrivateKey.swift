@@ -1,7 +1,7 @@
 public import Foundation
 public import X509
 
-public struct CertificateAndPrivateKey: Codable, Equatable, Hashable {
+public struct CertificateAndPrivateKey: Codable, Equatable, Hashable, Sendable {
 	/// The certificates.
 	public var certificateChain: CertificateChain
 	/// The private key used to create the certificates.

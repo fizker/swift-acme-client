@@ -1,7 +1,7 @@
 public import Foundation
 
 /// An account with an ACME server.
-public struct Account: Codable {
+public struct Account: Codable, Sendable {
 	/// The key that the account uses to authenticate with the server.
 	public var key: Key.Private
 	/// The URL that represents the account at the server.

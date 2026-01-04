@@ -1,6 +1,6 @@
 public import Foundation
 
-public struct CertificateChain: Codable, Equatable, Hashable {
+public struct CertificateChain: Codable, Equatable, Hashable, Sendable {
 	/// The certificates.
 	public let certificates: [CertificateData]
 

@@ -2,7 +2,7 @@ import Foundation
 import X509
 
 /// The data consumed and produced by the ACMEClient during ACME operations.
-public struct ACMEData: Codable {
+public struct ACMEData: Codable, Sendable {
 	/// The directory that the data is validated against.
 	public var directory: ACMEDirectory
 	/// The account registered with the ACME server.
