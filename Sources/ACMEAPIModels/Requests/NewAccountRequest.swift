@@ -1,3 +1,5 @@
+public import Foundation
+
 public struct NewAccountRequest: Codable {
 	/// An array of URLs that the server can use to contact the client for issues related to this account.
 	///
@@ -22,5 +24,69 @@ public struct NewAccountRequest: Codable {
 		self.contact = contact
 		self.termsOfServiceAgreed = termsOfServiceAgreed
 		self.externalAccountBinding = externalAccountBinding
+	}
+
+	public init(
+		contact: EmailURL,
+		termsOfServiceAgreed: Bool? = nil,
+		externalAccountBinding: ExternalAccountBinding? = nil,
+	) {
+		self.contact = [contact]
+		self.termsOfServiceAgreed = termsOfServiceAgreed
+		self.externalAccountBinding = externalAccountBinding
+	}
+}
+
+extension NewAccountRequest {
+	/// Convenience-init that creates new EmailURL internally
+	public init(
+		contact: [String],
+		termsOfServiceAgreed: Bool? = nil,
+		externalAccountBinding: ExternalAccountBinding? = nil,
+	) throws {
+		try self.init(
+			contact: contact.map(EmailURL.init),
+			termsOfServiceAgreed: termsOfServiceAgreed,
+			externalAccountBinding: externalAccountBinding,
+		)
+	}
+
+	/// Convenience-init that creates new EmailURL internally
+	public init(
+		contact: String,
+		termsOfServiceAgreed: Bool? = nil,
+		externalAccountBinding: ExternalAccountBinding? = nil,
+	) throws {
+		try self.init(
+			contact: EmailURL(contact),
+			termsOfServiceAgreed: termsOfServiceAgreed,
+			externalAccountBinding: externalAccountBinding,
+		)
+	}
+
+	/// Convenience-init that creates new EmailURL internally
+	public init(
+		contact: [URL],
+		termsOfServiceAgreed: Bool? = nil,
+		externalAccountBinding: ExternalAccountBinding? = nil,
+	) throws {
+		try self.init(
+			contact: contact.map(EmailURL.init),
+			termsOfServiceAgreed: termsOfServiceAgreed,
+			externalAccountBinding: externalAccountBinding,
+		)
+	}
+
+	/// Convenience-init that creates new EmailURL internally
+	public init(
+		contact: URL,
+		termsOfServiceAgreed: Bool? = nil,
+		externalAccountBinding: ExternalAccountBinding? = nil,
+	) throws {
+		try self.init(
+			contact: EmailURL(contact),
+			termsOfServiceAgreed: termsOfServiceAgreed,
+			externalAccountBinding: externalAccountBinding,
+		)
 	}
 }
