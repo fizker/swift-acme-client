@@ -2,7 +2,6 @@ import ACMEAPIModels
 import CompileSafeInitMacro
 import Foundation
 import FzkExtensions
-import SwifterJSON
 import Testing
 
 struct ChallengeTests {

@@ -38,7 +38,6 @@ let package = Package(
 		.package(url: "https://github.com/apple/swift-crypto.git", from: "4.1.0"),
 		.package(url: "https://github.com/fizker/swift-extensions.git", from:"1.5.1"),
 		.package(url: "https://github.com/fizker/swift-macro-compile-safe-init", from: "1.0.0"),
-		.package(url: "https://github.com/guykogus/SwifterJSON.git", from: "4.2.0"),
 		.package(url: "https://github.com/swift-server/async-http-client.git", from: "1.29.1"),
 		.package(url: "https://github.com/vapor/jwt-kit.git", from: "5.3.0"),
 	],
@@ -66,7 +65,7 @@ let package = Package(
 		.target(
 			name: "ACMEAPIModels",
 			dependencies: [
-				.product(name: "SwifterJSON", package: "SwifterJSON"),
+				.product(name: "FzkExtensions", package: "swift-extensions"),
 			],
 			swiftSettings: upcomingFeatures,
 		),

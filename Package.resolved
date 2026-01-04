@@ -1,5 +1,5 @@
 {
-  "originHash" : "19bf74dac05ab1a160ff40bef8edc751b002ea2baba007445790cb81839fdaf0",
+  "originHash" : "40fc6053b7a8e5ef39b02efbfbdd035b7d61f930172ff4981e75be397121127b",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -233,15 +233,6 @@
       "state" : {
         "revision" : "395a77f0aa927f0ff73941d7ac35f2b46d47c9db",
         "version" : "1.6.3"
-      }
-    },
-    {
-      "identity" : "swifterjson",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/guykogus/SwifterJSON.git",
-      "state" : {
-        "revision" : "6980939e33bd58b0a472b800b24183de86b2993c",
-        "version" : "4.2.0"
       }
     }
   ],
