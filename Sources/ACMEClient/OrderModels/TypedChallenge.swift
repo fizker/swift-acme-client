@@ -3,11 +3,14 @@ public import Foundation
 
 public enum TypedChallenge: CustomStringConvertible, Sendable {
 	case dns(DNSChallenge)
+	case http(HTTPChallenge)
 	case other(Challenge)
 
 	public var url: URL {
 		switch self {
 		case let .dns(challenge):
+			challenge.url
+		case let .http(challenge):
 			challenge.url
 		case let .other(challenge):
 			challenge.url
@@ -18,6 +21,8 @@ public enum TypedChallenge: CustomStringConvertible, Sendable {
 		switch self {
 		case let .dns(challenge):
 			challenge.type
+		case let .http(challenge):
+			challenge.type
 		case let .other(challenge):
 			challenge.type
 		}
@@ -26,6 +31,8 @@ public enum TypedChallenge: CustomStringConvertible, Sendable {
 	public var token: String {
 		switch self {
 		case let .dns(challenge):
+			challenge.token
+		case let .http(challenge):
 			challenge.token
 		case let .other(challenge):
 			challenge.token
@@ -36,6 +43,8 @@ public enum TypedChallenge: CustomStringConvertible, Sendable {
 	public var directions: String {
 		switch self {
 		case let .dns(challenge):
+			challenge.directions
+		case let .http(challenge):
 			challenge.directions
 		case let .other(challenge):
 			"Unsupported challenge:\n\(challenge.description, indentedWith: "- ")"

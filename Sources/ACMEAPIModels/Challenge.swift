@@ -44,6 +44,7 @@ public struct Challenge: Codable, Equatable, Sendable {
 
 	/// The type of challenge.
 	public var type: `Type`
+	/// The URL to post to when the challenge is ready for processing.
 	public var url: URL
 	public var token: String
 
