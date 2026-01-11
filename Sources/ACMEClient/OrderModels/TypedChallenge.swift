@@ -2,6 +2,8 @@ public import ACMEAPIModels
 public import Foundation
 
 public enum TypedChallenge: CustomStringConvertible, Sendable {
+	public typealias `Type` = Challenge.`Type`
+
 	case dns(DNSChallenge)
 	case http(HTTPChallenge)
 	case other(Challenge)
@@ -17,7 +19,7 @@ public enum TypedChallenge: CustomStringConvertible, Sendable {
 		}
 	}
 
-	public var type: Challenge.`Type` {
+	public var type: `Type` {
 		switch self {
 		case let .dns(challenge):
 			challenge.type
