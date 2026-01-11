@@ -2,7 +2,7 @@ public import ACMEAPIModels
 public import Crypto
 public import Foundation
 
-public struct DNSChallenge: CustomStringConvertible {
+public struct DNSChallenge: CustomStringConvertible, Sendable {
 	public let url: URL
 	public let token: String
 	public var type: Challenge.`Type` { .dns }
@@ -44,7 +44,7 @@ public struct DNSChallenge: CustomStringConvertible {
 		"DNS: \(directions)"
 	}
 
-	public struct TXT {
+	public struct TXT: Sendable {
 		public let domain: String
 		public let value: SHA256Digest
 	}

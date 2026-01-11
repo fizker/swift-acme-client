@@ -71,7 +71,7 @@ public struct Authorization: Codable {
 	/// Wildcard domain names are described in Section 7.1.3.
 	public var wildcard: Bool?
 
-	public enum Status: String, Codable {
+	public enum Status: String, Codable, Sendable {
 		case pending, valid, invalid, deactivated, expired, revoked
 	}
 }

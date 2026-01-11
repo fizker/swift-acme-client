@@ -1,7 +1,7 @@
 public import ACMEAPIModels
 public import Foundation
 
-public enum TypedChallenge: CustomStringConvertible {
+public enum TypedChallenge: CustomStringConvertible, Sendable {
 	case dns(DNSChallenge)
 	case other(Challenge)
 

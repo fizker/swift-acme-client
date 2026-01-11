@@ -57,7 +57,7 @@ struct CustomError: Error {
 	}
 }
 
-public struct Domain {
+public struct Domain: Sendable {
 	let value: String
 
 	public init?(_ string: String) {

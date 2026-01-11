@@ -2,7 +2,7 @@ public import ACMEAPIModels
 public import Foundation
 import FzkExtensions
 
-public struct TypedAuthorization {
+public struct TypedAuthorization: Sendable {
 	public let identifier: Identifier
 	public let challenges: [TypedChallenge]
 	public let url: URL
@@ -37,7 +37,7 @@ public struct TypedAuthorization {
 /// A verification for an `Authorization`.
 ///
 /// This is created through the ``TypedAuthorization``.
-public struct Verification {
+public struct Verification: Sendable {
 	/// The challenge that should be verified.
 	public let challenge: TypedChallenge
 	/// The authorization that issued the challenge.
