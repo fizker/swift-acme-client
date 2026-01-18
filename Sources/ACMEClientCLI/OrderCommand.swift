@@ -42,7 +42,7 @@ struct CreateOrderCommand: AsyncParsableCommand {
 			authHandler: client.handleDNSChallengesViaCLI,
 		)
 
-		let data = try coder.encode(certificate)
+		let data = try clientCoder.encode(certificate)
 		try data.write(to: output)
 	}
 

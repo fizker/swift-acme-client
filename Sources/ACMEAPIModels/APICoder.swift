@@ -1,13 +1,15 @@
 public import Foundation
 import FzkExtensions
+public import NIOCore
+import NIOFoundationCompat
 
-public struct Coder: Sendable {
+public struct APICoder: Sendable {
 	let encoder: JSONEncoder
 	let decoder: JSONDecoder
 
 	public init(
-		encoder: JSONEncoder = .acmeClientModelsPreconfigured,
-		decoder: JSONDecoder = .acmeClientModelsPreconfigured,
+		encoder: JSONEncoder = .acmeAPIModelsPreconfigured,
+		decoder: JSONDecoder = .acmeAPIModelsPreconfigured,
 	) {
 		self.encoder = encoder
 		self.decoder = decoder
@@ -20,29 +22,31 @@ public struct Coder: Sendable {
 	public func decode<T: Decodable>(_ data: Data) throws -> T {
 		try decoder.decode(T.self, from: data)
 	}
+
+	public func decode<T: Decodable>(_ buffer: ByteBuffer) throws -> T {
+		try decoder.decode(T.self, from: buffer)
+	}
 }
 
 /// Preconfigured compatible Encoder/Decoder pair.
-public let coder = Coder()
+public let apiCoder = APICoder()
 
 extension JSONDecoder {
-	/// Preconfigured JSONDecoder with settings matching ``JSONEncoder/acmeClientModelsPreconfigured``
-	public static var acmeClientModelsPreconfigured: JSONDecoder {
+	/// Preconfigured JSONDecoder with settings matching ``JSONEncoder/acmeAPIModelsPreconfigured``
+	public static var acmeAPIModelsPreconfigured: JSONDecoder {
 		let decoder = JSONDecoder()
 		decoder.dateDecodingStrategy = .iso8601WithFractionalSeconds
-		decoder.dataDecodingStrategy = .base64
 		decoder.allowsJSON5 = true
 		return decoder
 	}
 }
 
 extension JSONEncoder {
-	/// Preconfigured JSONDecoder with settings matching ``JSONDecoder/acmeClientModelsPreconfigured``
-	public static var acmeClientModelsPreconfigured: JSONEncoder {
+	/// Preconfigured JSONDecoder with settings matching ``JSONDecoder/acmeAPIModelsPreconfigured``
+	public static var acmeAPIModelsPreconfigured: JSONEncoder {
 		let encoder = JSONEncoder()
 		encoder.outputFormatting = [ .prettyPrinted, .sortedKeys ]
 		encoder.dateEncodingStrategy = .iso8601
-		encoder.dataEncodingStrategy = .base64
 		return encoder
 	}
 }
