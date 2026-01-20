@@ -1,3 +1,8 @@
+/// An identifier for a domain used in an Order request.
+///
+/// Examples:
+/// - `{ "type": "dns", "value": "www.example.org" }`
+/// - `{ "type": "dns", "value": "example.org" }`
 public struct Identifier: Codable, Equatable, Sendable {
 	public enum `Type`: Codable, Equatable, Sendable {
 		/// Any identifier of type "dns" in a newOrder request MAY have a

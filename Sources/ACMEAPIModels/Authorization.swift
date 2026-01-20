@@ -7,6 +7,7 @@ public import Foundation
 /// "revoked") and which challenges were used to validate possession of
 /// the identifier.
 public struct Authorization: Codable {
+	/// The identifier that the authorization is for.
 	public var identifier: Identifier
 
 	/// The status of this authorization.
