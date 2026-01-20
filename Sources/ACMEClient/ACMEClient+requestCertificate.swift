@@ -62,16 +62,25 @@ extension ACMEClient {
 			authHandler: authHandler,
 			nonce: &nonce,
 		)
-			? try await pollForAuthCompleted(orderURL: orderURL)
+		? try await pollForOrderStatus(
+			orderURL: orderURL,
+			requiredStatus: [ .processing, .ready, .valid ],
+		)
 			: order
 
 		// ACMEAPIModels.ErrorType.orderNotReady error here would indicate that we might not be fully validated yet
-		let (finalizedOrder, privateKey) = try await api.finalize(
+		let (maybeFinalizedOrder, privateKey) = try await api.finalize(
 			order: orderToFinalize,
 			orderURL: orderURL,
 			nonce: &nonce,
 			accountKey: accountKey,
 			accountURL: accountURL,
+		)
+
+		let finalizedOrder = try await pollForOrderStatus(
+			currentOrder: maybeFinalizedOrder,
+			orderURL: orderURL,
+			requiredStatus: [ .ready, .valid ],
 		)
 
 		let certificateChain = try await api.downloadCertificateChain(
@@ -84,7 +93,11 @@ extension ACMEClient {
 		return .init(certificateChain: certificateChain, privateKey: privateKey)
 	}
 
-	private func pollForAuthCompleted(orderURL: URL) async throws -> Order {
+	private func pollForOrderStatus(currentOrder: Order? = nil, orderURL: URL, requiredStatus: [Order.Status]) async throws -> Order {
+		if let currentOrder, requiredStatus.contains(currentOrder.status) {
+			return currentOrder
+		}
+
 		repeat {
 			let updatedOrder = try await api.order(
 				url: orderURL,
@@ -93,17 +106,14 @@ extension ACMEClient {
 				accountURL: accountURL,
 			)
 			switch updatedOrder.status {
-			case .pending:
-				logger.debug("Sleeping \(pollDelay) before polling again")
-				try await Task.sleep(for: pollDelay)
-				break
-			case .ready:
-				// wat - this should only happen after we finalize
-				fallthrough
-			case .processing, .valid:
-				return updatedOrder
 			case .invalid:
 				throw CertificateChallengeError.orderFailed
+			default:
+				if requiredStatus.contains(updatedOrder.status) {
+					return updatedOrder
+				}
+				logger.debug("Sleeping \(pollDelay) before polling again")
+				try await Task.sleep(for: pollDelay)
 			}
 		} while true
 	}
