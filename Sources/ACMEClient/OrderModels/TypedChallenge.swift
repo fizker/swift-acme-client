@@ -62,7 +62,9 @@ extension Authorization {
 			switch $0.type {
 			case .dns:
 				.dns(try DNSChallenge($0, identifier: identifier, keyAuth: keyAuth))
-			case .http, .tlsALPN, .unknown:
+			case .http:
+				.http(HTTPChallenge(challenge: $0, identifier: identifier, keyAuth: keyAuth))
+			case .tlsALPN, .unknown:
 				.other($0)
 			}
 		}

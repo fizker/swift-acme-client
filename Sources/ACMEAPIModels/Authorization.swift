@@ -71,6 +71,20 @@ public struct Authorization: Codable {
 	/// Wildcard domain names are described in Section 7.1.3.
 	public var wildcard: Bool?
 
+	public init(
+		identifier: Identifier,
+		status: Status,
+		expires: Date? = nil,
+		challenges: [Challenge],
+		wildcard: Bool? = nil,
+	) {
+		self.identifier = identifier
+		self.status = status
+		self.expires = expires
+		self.challenges = challenges
+		self.wildcard = wildcard
+	}
+
 	public enum Status: String, Codable, Sendable {
 		case pending, valid, invalid, deactivated, expired, revoked
 	}
