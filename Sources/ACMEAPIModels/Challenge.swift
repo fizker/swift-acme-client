@@ -56,7 +56,7 @@ public struct Challenge: Codable, Equatable, Sendable {
 	}
 
 	/// https://letsencrypt.org/docs/challenge-types/
-	public enum `Type`: Codable, Equatable, RawRepresentable, Sendable {
+	public enum `Type`: Codable, Equatable, Hashable, RawRepresentable, Sendable {
 		/// https://datatracker.ietf.org/doc/html/rfc8737
 		/// https://letsencrypt.org/docs/challenge-types/#tls-alpn-01
 		case tlsALPN
