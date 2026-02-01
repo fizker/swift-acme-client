@@ -9,7 +9,7 @@ into web servers.
 
 1. Add the package to the list of dependencies in your Package.swift file.
     ```swift
-    .package(url: "https://github.com/fizker/swift-acme-client.git", from: "0.2.0")
+    .package(url: "https://github.com/fizker/swift-acme-client.git", from: "0.3.0")
     ```
 2. Add the product to the dependencies of the targets:
     ```swift
