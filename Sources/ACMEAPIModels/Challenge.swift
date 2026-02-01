@@ -44,6 +44,7 @@ public struct Challenge: Codable, Equatable, Sendable {
 
 	/// The type of challenge.
 	public var type: `Type`
+	/// The URL to post to when the challenge is ready for processing.
 	public var url: URL
 	public var token: String
 
@@ -55,7 +56,7 @@ public struct Challenge: Codable, Equatable, Sendable {
 	}
 
 	/// https://letsencrypt.org/docs/challenge-types/
-	public enum `Type`: Codable, Equatable, RawRepresentable, Sendable {
+	public enum `Type`: Codable, Equatable, Hashable, RawRepresentable, Sendable {
 		/// https://datatracker.ietf.org/doc/html/rfc8737
 		/// https://letsencrypt.org/docs/challenge-types/#tls-alpn-01
 		case tlsALPN

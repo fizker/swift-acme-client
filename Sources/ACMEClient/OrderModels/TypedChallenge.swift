@@ -1,22 +1,29 @@
 public import ACMEAPIModels
 public import Foundation
 
-public enum TypedChallenge: CustomStringConvertible {
+public enum TypedChallenge: CustomStringConvertible, Sendable {
+	public typealias `Type` = Challenge.`Type`
+
 	case dns(DNSChallenge)
+	case http(HTTPChallenge)
 	case other(Challenge)
 
 	public var url: URL {
 		switch self {
 		case let .dns(challenge):
 			challenge.url
+		case let .http(challenge):
+			challenge.url
 		case let .other(challenge):
 			challenge.url
 		}
 	}
 
-	public var type: Challenge.`Type` {
+	public var type: `Type` {
 		switch self {
 		case let .dns(challenge):
+			challenge.type
+		case let .http(challenge):
 			challenge.type
 		case let .other(challenge):
 			challenge.type
@@ -27,6 +34,8 @@ public enum TypedChallenge: CustomStringConvertible {
 		switch self {
 		case let .dns(challenge):
 			challenge.token
+		case let .http(challenge):
+			challenge.token
 		case let .other(challenge):
 			challenge.token
 		}
@@ -36,6 +45,8 @@ public enum TypedChallenge: CustomStringConvertible {
 	public var directions: String {
 		switch self {
 		case let .dns(challenge):
+			challenge.directions
+		case let .http(challenge):
 			challenge.directions
 		case let .other(challenge):
 			"Unsupported challenge:\n\(challenge.description, indentedWith: "- ")"
@@ -51,7 +62,9 @@ extension Authorization {
 			switch $0.type {
 			case .dns:
 				.dns(try DNSChallenge($0, identifier: identifier, keyAuth: keyAuth))
-			case .http, .tlsALPN, .unknown:
+			case .http:
+				.http(HTTPChallenge(challenge: $0, identifier: identifier, keyAuth: keyAuth))
+			case .tlsALPN, .unknown:
 				.other($0)
 			}
 		}

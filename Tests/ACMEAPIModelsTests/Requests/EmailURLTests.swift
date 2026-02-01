@@ -21,4 +21,12 @@ struct EmailURLTests {
 			try EmailURL("https://example.com")
 		}
 	}
+
+	@Test
+	func encode__encodesCorrectly() async throws {
+		let mailURL = try EmailURL("foo@example.com")
+		let actual = try encode(mailURL)
+
+		#expect(actual == #""mailto:foo@example.com""#)
+	}
 }

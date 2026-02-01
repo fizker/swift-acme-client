@@ -32,7 +32,7 @@ public struct API {
 	package static func fetchDirectory(for acmeDirectory: ACMEDirectory, using httpClient: HTTPClient) async throws -> Directory {
 		let request = HTTPClientRequest(url: acmeDirectory.rawValue)
 		let response = try await httpClient.execute(request, timeout: .seconds(30))
-		return try await response.body.decode(using: coder)
+		return try await response.body.decode(using: apiCoder)
 	}
 
 	package func fetchNonce() async throws -> Nonce {
@@ -100,7 +100,7 @@ public struct API {
 		try await response.assertSuccess()
 
 		return (
-			try await response.body.decode(using: coder),
+			try await response.body.decode(using: apiCoder),
 			try response.nonce,
 		)
 	}
@@ -121,7 +121,7 @@ public struct API {
 		nonce = try response.nonce
 
 		return (
-			try await response.body.decode(using: coder),
+			try await response.body.decode(using: apiCoder),
 			try response.headers.first(name: "Location")
 				.flatMap(URL.init(string:))
 				.unwrap(orThrow: ACMEError.accountURLMissing),
@@ -167,7 +167,7 @@ public struct API {
 
 		nonce = try response.nonce
 
-		return try await response.body.decode(using: coder)
+		return try await response.body.decode(using: apiCoder)
 	}
 
 	// MARK: - Order
@@ -191,7 +191,7 @@ public struct API {
 		else { throw ACMEError.orderURLMissing }
 
 		return (
-			try await response.body.decode(using: coder),
+			try await response.body.decode(using: apiCoder),
 			url,
 		)
 	}
@@ -214,7 +214,7 @@ public struct API {
 
 		nonce = try response.nonce
 
-		return try await response.body.decode(using: coder)
+		return try await response.body.decode(using: apiCoder)
 	}
 
 	func finalize(order: Order, orderURL: URL, nonce: inout Nonce, accountKey: Key.Private, accountURL: URL) async throws -> (Order, Certificate.PrivateKey) {
@@ -280,7 +280,7 @@ public struct API {
 
 		nonce = try response.nonce
 
-		return try await response.body.decode(using: coder)
+		return try await response.body.decode(using: apiCoder)
 	}
 
 	func respondTo(
@@ -327,7 +327,7 @@ public struct API {
 		try await response.assertSuccess()
 		nonce = try response.nonce
 
-		return try await response.body.decode(using: coder)
+		return try await response.body.decode(using: apiCoder)
 	}
 
 	func downloadCertificateChain(for order: Order, nonce: inout Nonce, accountKey: Key.Private, accountURL: URL) async throws -> CertificateChain {
@@ -372,7 +372,7 @@ public struct API {
 		var request = HTTPClientRequest(url: acmeRequest.url)
 		request.headers.add(name: "content-type", value: "application/jose+json")
 		request.method = .POST
-		let data = try coder.encoder.encode(acmeRequest)
+		let data = try apiCoder.encode(acmeRequest)
 		request.body = .bytes(data)
 
 		return try await httpClient.execute(request, timeout: .seconds(30))
@@ -397,7 +397,7 @@ extension HTTPClientResponse {
 	func assertSuccess() async throws {
 		guard status.isSuccess
 		else {
-			let problem = try await body.decode(using: coder) as ACMEProblem
+			let problem = try await body.decode(using: apiCoder) as ACMEProblem
 			throw problem
 		}
 	}

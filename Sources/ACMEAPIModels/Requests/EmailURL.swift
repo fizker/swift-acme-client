@@ -29,11 +29,13 @@ public struct EmailURL: Equatable, Sendable {
 
 extension EmailURL: Codable {
 	public init(from decoder: any Decoder) throws {
-		let url = try URL(from: decoder)
+		let container = try decoder.singleValueContainer()
+		let url = try container.decode(URL.self)
 		try self.init(url)
 	}
 
 	public func encode(to encoder: any Encoder) throws {
-		try url.encode(to: encoder)
+		var container = encoder.singleValueContainer()
+		try container.encode(url)
 	}
 }

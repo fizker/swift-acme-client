@@ -38,14 +38,14 @@ struct ACMERequest: Encodable {
 			nonce: nonce,
 			accountKey: accountKey,
 			accountURL: accountURL,
-			body: try coder.encoder.encode(body) as Data?,
+			body: try apiCoder.encode(body) as Data?,
 		)
 	}
 
 	private init(url: URL, nonce: Nonce, accountKey: Key.Private, accountURL: URL?, body: Data?) throws {
 		self.url = url
 
-		header =  try coder.encoder.encode(ProtectedHeader(
+		header =  try apiCoder.encode(ProtectedHeader(
 			alg: "ES256",
 			nonce: nonce,
 			url: url,

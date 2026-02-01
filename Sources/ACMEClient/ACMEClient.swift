@@ -57,7 +57,7 @@ struct CustomError: Error {
 	}
 }
 
-public struct Domain {
+public struct Domain: Sendable, CustomStringConvertible {
 	let value: String
 
 	public init?(_ string: String) {
@@ -66,4 +66,6 @@ public struct Domain {
 
 		value = string
 	}
+
+	public var description: String { value }
 }

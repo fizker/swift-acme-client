@@ -36,6 +36,7 @@ let package = Package(
 		.package(url: "https://github.com/apple/swift-argument-parser", from: "1.6.2"),
 		.package(url: "https://github.com/apple/swift-certificates.git", from: "1.15.0"),
 		.package(url: "https://github.com/apple/swift-crypto.git", from: "4.1.0"),
+		.package(url: "https://github.com/apple/swift-nio", from: "2.88.0"),
 		.package(url: "https://github.com/fizker/swift-extensions.git", from:"1.5.1"),
 		.package(url: "https://github.com/fizker/swift-macro-compile-safe-init", from: "1.0.0"),
 		.package(url: "https://github.com/swift-server/async-http-client.git", from: "1.29.1"),
@@ -66,6 +67,7 @@ let package = Package(
 			name: "ACMEAPIModels",
 			dependencies: [
 				.product(name: "FzkExtensions", package: "swift-extensions"),
+				.product(name: "NIOFoundationCompat", package: "swift-nio"),
 			],
 			swiftSettings: upcomingFeatures,
 		),

@@ -3,7 +3,7 @@ import Crypto
 import Foundation
 import JWTKit
 
-struct KeyAuthorization {
+package struct KeyAuthorization {
 	var publicKey: P256.PrivateKey.PublicKey
 	var thumbprint: String
 
