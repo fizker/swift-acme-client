@@ -18,6 +18,14 @@ struct CreateOrderCommand: AsyncParsableCommand {
 		commandName: "create",
 	)
 
+	@Option(
+		name: .shortAndLong,
+		help: """
+		The validation method to use.
+		""",
+	)
+	var method: ValidationMethod
+
 	@OptionGroup
 	var options: DirectoryOptions
 
@@ -37,20 +45,21 @@ struct CreateOrderCommand: AsyncParsableCommand {
 			accountURL: auth.accountURL,
 		)
 
+		let authHandler = switch method {
+		case .dns: client.handleDNSChallengesViaCLI
+		case .http: client.handleHTTPChallengesViaCLI
+		}
+
 		let certificate = try await client.requestCertificate(
 			covering: domains,
-			authHandler: client.handleDNSChallengesViaCLI,
+			authHandler: authHandler,
 		)
 
 		let data = try clientCoder.encode(certificate)
 		try data.write(to: output)
 	}
 
-	// This is only included to omit logger property
-	enum CodingKeys: CodingKey {
-		case options
-		case auth
-		case output
-		case domains
+	enum ValidationMethod: String, CaseIterable, ExpressibleByArgument {
+		case dns, http
 	}
 }

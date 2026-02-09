@@ -24,10 +24,7 @@ extension ACMEClient {
 
 			remainingAuths.append(dnsChallenge)
 
-			guard case let .dns(x) = dnsChallenge.challenge
-			else { fatalError() }
-
-			print(x.directions)
+			print(dnsChallenge.challenge.directions)
 		}
 
 		if !nonDNS.isEmpty {
