@@ -1,3 +1,4 @@
+import ACMEAPIModels
 import ACMEClient
 import ACMEClientModels
 import ArgumentParser
@@ -45,14 +46,9 @@ struct CreateOrderCommand: AsyncParsableCommand {
 			accountURL: auth.accountURL,
 		)
 
-		let authHandler = switch method {
-		case .dns: client.handleDNSChallengesViaCLI
-		case .http: client.handleHTTPChallengesViaCLI
-		}
-
 		let certificate = try await client.requestCertificate(
 			covering: domains,
-			authHandler: authHandler,
+			authHandler: client.challengeHandler(for: method.challengeType),
 		)
 
 		let data = try clientCoder.encode(certificate)
@@ -61,5 +57,12 @@ struct CreateOrderCommand: AsyncParsableCommand {
 
 	enum ValidationMethod: String, CaseIterable, ExpressibleByArgument {
 		case dns, http
+
+		var challengeType: Challenge.`Type` {
+			switch self {
+			case .dns: .dns
+			case .http: .http
+			}
+		}
 	}
 }
