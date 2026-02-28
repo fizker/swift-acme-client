@@ -32,3 +32,10 @@ Accounts can be created with
 ```sh
 swift run acme-client account create --directory <directory> --key <path to key> --contact <email>
 ```
+
+
+## Creating certificates
+
+The app supports validating certificates either via HTTP or DNS.
+
+- <doc:Validating-via-HTTP>
