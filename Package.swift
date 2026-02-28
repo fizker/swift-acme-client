@@ -84,6 +84,7 @@ let package = Package(
 			name: "ACMEClientModels",
 			dependencies: [
 				.product(name: "X509", package: "swift-certificates"),
+				.product(name: "Crypto", package: "swift-crypto"),
 				.product(name: "FzkExtensions", package: "swift-extensions"),
 				.product(name: "CompileSafeInitMacro", package: "swift-macro-compile-safe-init"),
 			],

@@ -1,3 +1,4 @@
+import ACMEAPIModels
 import ACMEClient
 import ACMEClientModels
 import ArgumentParser
@@ -17,6 +18,14 @@ struct CreateOrderCommand: AsyncParsableCommand {
 	static let configuration = CommandConfiguration(
 		commandName: "create",
 	)
+
+	@Option(
+		name: .shortAndLong,
+		help: """
+		The validation method to use.
+		""",
+	)
+	var method: ValidationMethod
 
 	@OptionGroup
 	var options: DirectoryOptions
@@ -39,18 +48,21 @@ struct CreateOrderCommand: AsyncParsableCommand {
 
 		let certificate = try await client.requestCertificate(
 			covering: domains,
-			authHandler: client.handleDNSChallengesViaCLI,
+			authHandler: client.challengeHandler(for: method.challengeType),
 		)
 
 		let data = try clientCoder.encode(certificate)
 		try data.write(to: output)
 	}
 
-	// This is only included to omit logger property
-	enum CodingKeys: CodingKey {
-		case options
-		case auth
-		case output
-		case domains
+	enum ValidationMethod: String, CaseIterable, ExpressibleByArgument {
+		case dns, http
+
+		var challengeType: Challenge.`Type` {
+			switch self {
+			case .dns: .dns
+			case .http: .http
+			}
+		}
 	}
 }

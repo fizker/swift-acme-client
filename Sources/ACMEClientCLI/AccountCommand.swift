@@ -26,13 +26,13 @@ struct CreateAccountKeyCommand: AsyncParsableCommand {
 		""",
 	)
 
-	@Option(help: "The file path that the new key should be written to.")
-	var output: String
+	@Argument(help: "The file path that the new key should be written to.")
+	var path: String
 
 	func run() async throws {
 		let key = Key.Private()
 		let fm = FileManager.default
-		fm.createFile(atPath: output, contents: Data(key.pemRepresentation.utf8))
+		fm.createFile(atPath: path, contents: Data(key.pemRepresentation.utf8))
 	}
 }
 
