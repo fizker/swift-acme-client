@@ -1,14 +1,15 @@
 public import ACMEAPIModels
 
 extension ACMEClient {
+	public typealias ChallengeHandler = ([TypedAuthorization])
+	throws(UnsupportedChallenges) ->
+	[Verification]
+
 	/// Handles authorizations via CLI.
 	///
 	/// - parameter type: The type of challenge to attempt.
 	/// - throws: Unless every challenge supports HTTP, this will throw `UnsupportedChallenges`.
-	public func challengeHandler(for type: Challenge.`Type`) -> ([TypedAuthorization])
-	throws(UnsupportedChallenges)
-	-> [Verification]
-	{
+	public func challengeHandler(for type: Challenge.`Type`) -> ChallengeHandler {
 		let handler = AuthHandler(type: type)
 		return handler.handleChallengesViaCLI
 	}
