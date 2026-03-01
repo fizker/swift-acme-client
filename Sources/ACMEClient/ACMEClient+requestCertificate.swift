@@ -46,21 +46,25 @@ extension ACMEClient {
 	/// will be followed.
 	public func requestCertificate(
 		covering domains: [Domain],
-		renewing existingCertificate: CertificateAndPrivateKey,
+		renewing existingCertificate: CertificateAndPrivateKey?,
 		authHandler: AuthorizationHandler,
 	) async throws -> (ACMEClientModels.RenewalInfo, CertificateAndPrivateKey?) {
 		var certificateIdentifier: String?
-		if let renewalInfo = await api.renewalInfo(for: existingCertificate.certificateChain)?.first {
-			guard renewalInfo.suggestedWindow.randomTime < Date.now
-			else { return (renewalInfo, nil) }
+		if let existingCertificate {
+			if let renewalInfo = await api.renewalInfo(for: existingCertificate.certificateChain)?.first {
+				guard renewalInfo.suggestedWindow.randomTime < Date.now
+				else { return (renewalInfo, nil) }
 
-			certificateIdentifier = renewalInfo.certificateIdentifier
+				certificateIdentifier = renewalInfo.certificateIdentifier
+			} else {
+				// ACME provider does not support renewal info.
+				// We renew if less than 15 days left
+				guard existingCertificate.expiresAt < Date.now.adding(.days(15))
+				else { return (.init(existingCertificate), nil) }
+
+				certificateIdentifier = nil
+			}
 		} else {
-			// ACME provider does not support renewal info.
-			// We renew if less than 15 days left
-			guard existingCertificate.expiresAt < Date.now.adding(.days(15))
-			else { return (.init(existingCertificate), nil) }
-
 			certificateIdentifier = nil
 		}
 
