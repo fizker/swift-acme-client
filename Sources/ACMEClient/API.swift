@@ -48,21 +48,26 @@ public struct API {
 	/// Returns the renewal info for the given certificate, if supported.
 	///
 	/// - returns: `nil` if the directory does not support renewal info.
-	private func renewalInfo(for certificate: Certificate, url: URL) async throws -> RenewalInfo {
+	private func renewalInfo(for certificate: Certificate, url: URL) async throws -> ACMEClientModels.RenewalInfo {
 		let ariKey = try RenewalInfoKey(for: certificate)
 		let request = HTTPClientRequest(url: url.appending(path: ariKey.value))
 		let response = try await httpClient.execute(request, timeout: .seconds(30))
-		return try await response.body.decode(using: apiCoder)
+
+		let retryHeader = response.headers.first(name: "retry-after")
+		let retryDate = retryHeader.flatMap(Date.init(httpDate:)) ?? .now.adding(.days(1))
+
+		let info = try await response.body.decode(using: apiCoder) as ACMEAPIModels.RenewalInfo
+		return .init(info, recommendedDateForNextCheck: retryDate)
 	}
 
 	/// Returns the renewal info for the given certificate, if supported.
 	///
 	/// - returns: `nil` if the directory does not support renewal info.
-	package func renewalInfo(for chain: CertificateChain) async -> [RenewalInfo]? {
+	package func renewalInfo(for chain: CertificateChain) async -> [ACMEClientModels.RenewalInfo]? {
 		guard let url = directory.renewalInfo
 		else { return nil }
 
-		var renewalInfos = [RenewalInfo]()
+		var renewalInfos = [ACMEClientModels.RenewalInfo]()
 
 		for cert in chain.certificates {
 			guard !cert.domains.isEmpty

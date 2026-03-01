@@ -36,6 +36,42 @@ extension ACMEClient {
 	/// A function that should handle authorizations by picking and meeting a challenge for each authorization.
 	public typealias AuthorizationHandler = ([TypedAuthorization]) async throws -> [Verification]
 
+	/// Renews the given certificate-set covering the given domains.
+	///
+	/// If the certificate is not up for renewal, this will return `nil`. This is determined by the ACME provider
+	/// (if [ACME Renewal Info](https://datatracker.ietf.org/doc/rfc9773/) is supported,
+	/// or otherwise if the certificate expires in 15 days.
+	///
+	/// If the certificate is up for renewal, the logic of ``requestCertificate(covering:authHandler:)``
+	/// will be followed.
+	public func requestCertificate(
+		covering domains: [Domain],
+		renewing existingCertificate: CertificateAndPrivateKey,
+		authHandler: AuthorizationHandler,
+	) async throws -> (ACMEClientModels.RenewalInfo, CertificateAndPrivateKey?) {
+		if let renewalInfo = await api.renewalInfo(for: existingCertificate.certificateChain)?.first {
+			guard renewalInfo.suggestedWindow.randomTime < Date.now
+			else {
+				return (renewalInfo, nil)
+			}
+		} else {
+			// ACME provider does not support renewal info.
+			// We renew if less than 15 days left
+			guard existingCertificate.expiresAt < Date.now.adding(.days(15))
+			else { return (.init(existingCertificate), nil) }
+		}
+
+		let certificate = try await requestCertificate(covering: domains, authHandler: authHandler)
+		return (.init(certificate), certificate)
+	}
+
+	/// Requests a new certificate-set covering the given domains.
+	///
+	/// The given AuthHandler will be called when the ACME provider have responded with the required authorizations.
+	/// The handler is expected to return one ``Verification`` for each authorization, and should only
+	/// return when the challenges have been set up.
+	///
+	/// After the AuthHandler returns, the ACME provider is told to continue.
 	public func requestCertificate(
 		covering domains: [Domain],
 		authHandler: AuthorizationHandler,
