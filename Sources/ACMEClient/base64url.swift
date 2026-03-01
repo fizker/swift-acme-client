@@ -17,3 +17,9 @@ extension Data {
 			|> String.init
 	}
 }
+
+extension Sequence where Element == UInt8 {
+	func base64urlEncodedString() -> String {
+		Data(self).base64urlEncodedString()
+	}
+}
