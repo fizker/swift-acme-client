@@ -49,19 +49,22 @@ extension ACMEClient {
 		renewing existingCertificate: CertificateAndPrivateKey,
 		authHandler: AuthorizationHandler,
 	) async throws -> (ACMEClientModels.RenewalInfo, CertificateAndPrivateKey?) {
+		var certificateIdentifier: String?
 		if let renewalInfo = await api.renewalInfo(for: existingCertificate.certificateChain)?.first {
 			guard renewalInfo.suggestedWindow.randomTime < Date.now
-			else {
-				return (renewalInfo, nil)
-			}
+			else { return (renewalInfo, nil) }
+
+			certificateIdentifier = renewalInfo.certificateIdentifier
 		} else {
 			// ACME provider does not support renewal info.
 			// We renew if less than 15 days left
 			guard existingCertificate.expiresAt < Date.now.adding(.days(15))
 			else { return (.init(existingCertificate), nil) }
+
+			certificateIdentifier = nil
 		}
 
-		let certificate = try await requestCertificate(covering: domains, authHandler: authHandler)
+		let certificate = try await requestCertificate(covering: domains, replaces: certificateIdentifier, authHandler: authHandler)
 		return (.init(certificate), certificate)
 	}
 
@@ -76,11 +79,22 @@ extension ACMEClient {
 		covering domains: [Domain],
 		authHandler: AuthorizationHandler,
 	) async throws -> CertificateAndPrivateKey {
+		try await requestCertificate(covering: domains, replaces: nil, authHandler: authHandler)
+	}
+
+	private func requestCertificate(
+		covering domains: [Domain],
+		replaces certKey: String?,
+		authHandler: AuthorizationHandler,
+	) async throws -> CertificateAndPrivateKey {
 		logger.trace("Creating order")
 
 		var nonce = nonce
 		let (order, orderURL) = try await api.createOrder(
-			NewOrderRequest(identifiers: domains.map { Identifier(type: .dns, value: $0.value) }),
+			NewOrderRequest(
+				identifiers: domains.map { Identifier(type: .dns, value: $0.value) },
+				replaces: certKey,
+			),
 			nonce: &nonce,
 			accountKey: accountKey,
 			accountURL: accountURL,

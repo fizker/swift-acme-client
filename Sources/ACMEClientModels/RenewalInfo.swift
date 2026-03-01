@@ -1,9 +1,10 @@
 public import Foundation
 
-public struct RenewalInfo {
+public struct RenewalInfo: Codable {
 	public var suggestedWindow: Window
 	public var recommendedDateForNextCheck: Date
 	public var explanationURL: URL?
+	package var certificateIdentifier: String?
 
 	public init(
 		suggestedWindow: Window,
@@ -13,6 +14,12 @@ public struct RenewalInfo {
 		self.suggestedWindow = suggestedWindow
 		self.recommendedDateForNextCheck = recommendedDateForNextCheck
 		self.explanationURL = explanationURL
+	}
+
+	enum CodingKeys: String, CodingKey {
+		case suggestedWindow
+		case recommendedDateForNextCheck
+		case explanationURL
 	}
 
 	public struct Window: Codable {

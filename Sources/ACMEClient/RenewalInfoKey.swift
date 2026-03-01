@@ -25,12 +25,13 @@ struct RenewalInfoKey {
 }
 
 extension ACMEClientModels.RenewalInfo {
-	init(_ info: ACMEAPIModels.RenewalInfo, recommendedDateForNextCheck: Date) {
+	init(_ info: ACMEAPIModels.RenewalInfo, recommendedDateForNextCheck: Date, certificateIdentifier: String) {
 		self.init(
 			suggestedWindow: .init(start: info.suggestedWindow.start, end: info.suggestedWindow.end),
 			recommendedDateForNextCheck: recommendedDateForNextCheck,
 			explanationURL: info.explanationURL,
 		)
+		self.certificateIdentifier = certificateIdentifier
 	}
 
 	init(_ certificate: CertificateAndPrivateKey) {

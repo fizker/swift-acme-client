@@ -57,7 +57,7 @@ public struct API {
 		let retryDate = retryHeader.flatMap(Date.init(httpDate:)) ?? .now.adding(.days(1))
 
 		let info = try await response.body.decode(using: apiCoder) as ACMEAPIModels.RenewalInfo
-		return .init(info, recommendedDateForNextCheck: retryDate)
+		return .init(info, recommendedDateForNextCheck: retryDate, certificateIdentifier: ariKey.value)
 	}
 
 	/// Returns the renewal info for the given certificate, if supported.
