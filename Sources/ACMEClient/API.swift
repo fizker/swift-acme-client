@@ -48,13 +48,33 @@ public struct API {
 	/// Returns the renewal info for the given certificate, if supported.
 	///
 	/// - returns: `nil` if the directory does not support renewal info.
-	func renewalInfo(for certificate: Certificate) async throws -> RenewalInfo? {
+	private func renewalInfo(for certificate: Certificate, url: URL) async throws -> RenewalInfo {
 		let ariKey = try RenewalInfoKey(for: certificate)
-		guard let url = directory.renewalInfo
-		else { return nil }
 		let request = HTTPClientRequest(url: url.appending(path: ariKey.value))
 		let response = try await httpClient.execute(request, timeout: .seconds(30))
 		return try await response.body.decode(using: apiCoder)
+	}
+
+	/// Returns the renewal info for the given certificate, if supported.
+	///
+	/// - returns: `nil` if the directory does not support renewal info.
+	package func renewalInfo(for chain: CertificateChain) async -> [RenewalInfo]? {
+		guard let url = directory.renewalInfo
+		else { return nil }
+
+		var renewalInfos = [RenewalInfo]()
+
+		for cert in chain.certificates {
+			guard !cert.domains.isEmpty
+			else { continue }
+			do {
+				renewalInfos.append(try await renewalInfo(for: cert.certificate, url: url))
+			} catch {
+				logger.error("ARI unexpectedly failed for \(cert.domains): \(error)")
+			}
+		}
+
+		return renewalInfos
 	}
 
 	// MARK: - Account
