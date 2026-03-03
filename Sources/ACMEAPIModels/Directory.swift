@@ -27,6 +27,9 @@ package struct Directory: Codable {
 	/// Key change
 	package var keyChange: URL
 
+	/// Renewal information
+	package var renewalInfo: URL?
+
 	/// Each field in the object is an item of metadata relating to the service provided by the ACME server.
 	///
 	/// https://datatracker.ietf.org/doc/html/rfc8555#section-9.7.6

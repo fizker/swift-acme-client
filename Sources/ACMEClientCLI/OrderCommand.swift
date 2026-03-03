@@ -10,6 +10,7 @@ struct OrderCommand: AsyncParsableCommand {
 		abstract: "Manage orders",
 		subcommands: [
 			CreateOrderCommand.self,
+			FetchRenewalInfoCommand.self,
 		],
 	)
 }
@@ -64,5 +65,32 @@ struct CreateOrderCommand: AsyncParsableCommand {
 			case .http: .http
 			}
 		}
+	}
+}
+
+struct FetchRenewalInfoCommand: AsyncParsableCommand {
+	static let configuration = CommandConfiguration(
+		commandName: "renewal-info",
+	)
+
+	@Argument(transform: { URL(fileURLWithPath: $0) })
+	var acmeDataPath: URL
+
+	func run() async throws {
+		let data = try Data(contentsOf: acmeDataPath)
+		let acmeData = try clientCoder.decode(data) as ACMEData
+		guard let chain = acmeData.certificate?.certificateChain
+		else { throw RenewalError.certificateMissing }
+
+		let api = try await API(directory: acmeData.directory)
+		guard let infos = await api.renewalInfo(for: chain)
+		else { throw RenewalError.ariNotSupported }
+
+		print("infos: \(infos)")
+	}
+
+	enum RenewalError: Error {
+		case certificateMissing
+		case ariNotSupported
 	}
 }
