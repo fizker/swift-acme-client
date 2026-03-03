@@ -28,7 +28,11 @@ extension ACMEClientModels.RenewalInfo {
 	init(_ info: ACMEAPIModels.RenewalInfo, recommendedDateForNextCheck: Date, certificateIdentifier: String) {
 		self.init(
 			suggestedWindow: .init(start: info.suggestedWindow.start, end: info.suggestedWindow.end),
-			recommendedDateForNextCheck: recommendedDateForNextCheck,
+			recommendedDateForNextCheck: min(
+				recommendedDateForNextCheck,
+				info.suggestedWindow.randomTime,
+				.now.adding(.days(1)),
+			),
 			explanationURL: info.explanationURL,
 		)
 		self.certificateIdentifier = certificateIdentifier
@@ -38,7 +42,7 @@ extension ACMEClientModels.RenewalInfo {
 		let windowStart = certificate.expiresAt.adding(.days(-15))
 		self.init(
 			suggestedWindow: .init(start: windowStart, end: windowStart.adding(.days(2))),
-			recommendedDateForNextCheck: .now.adding(.days(1)),
+			recommendedDateForNextCheck: min(certificate.expiresAt, .now.adding(.days(1))),
 		)
 	}
 }

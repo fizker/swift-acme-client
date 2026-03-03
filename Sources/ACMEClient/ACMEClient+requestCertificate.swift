@@ -52,7 +52,7 @@ extension ACMEClient {
 		var certificateIdentifier: String?
 		if let existingCertificate {
 			if let renewalInfo = await api.renewalInfo(for: existingCertificate.certificateChain)?.first {
-				guard renewalInfo.suggestedWindow.randomTime < Date.now
+				guard renewalInfo.suggestedWindow.start <= .now
 				else { return (renewalInfo, nil) }
 
 				certificateIdentifier = renewalInfo.certificateIdentifier
