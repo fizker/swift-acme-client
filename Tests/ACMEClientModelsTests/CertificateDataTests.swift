@@ -5,7 +5,7 @@ import X509
 @testable import ACMEClientModels
 
 struct CertificateDataTests {
-	let testCert = try! generateCertificate(commonName: "test", domains: ["example.com"]).certificate
+	let testCert = try! Certificate.generateSelfSigned(commonName: "test", domains: ["example.com"])
 
 	@Test
 	func initWithCertificate__certificateCoversSingleDomain__detectsTheEmbeddedDomains() async throws {
@@ -15,11 +15,11 @@ struct CertificateDataTests {
 
 	@Test
 	func initWithCertificate__certificateCoversMultipleDomains__detectsTheEmbeddedDomains() async throws {
-		let testCert = try generateCertificate(commonName: "test", domains: [
+		let testCert = try Certificate.generateSelfSigned(commonName: "test", domains: [
 			"example.com",
 			"foo.example.com",
 			"bar.baz.example.com",
-		]).certificate
+		])
 		let actual = try CertificateData(certificate: testCert, isSelfSigned: true)
 		#expect(actual.domains == [
 			"example.com",
@@ -132,32 +132,4 @@ struct CertificateDataTests {
 		let actual = data.covers(domains: rhs)
 		#expect(actual == expected)
 	}
-}
-
-func generateCertificate(commonName: String, domains: [String]) throws -> CertificateData {
-	let key = P256.Signing.PrivateKey()
-
-	let subject = try DistinguishedName {
-		CommonName(commonName)
-	}
-	let cert = try Certificate(
-		version: .v3,
-		serialNumber: .init(),
-		publicKey: .init(key.publicKey),
-		notValidBefore: .now,
-		notValidAfter: Date(timeIntervalSinceNow: 3600 * 24 * 365),
-		issuer: subject,
-		subject: subject,
-		signatureAlgorithm: .ecdsaWithSHA256,
-		extensions: try .init(builder: {
-			Critical(BasicConstraints.isCertificateAuthority(maxPathLength: nil))
-			Critical(KeyUsage(digitalSignature: true, keyCertSign: true))
-			SubjectAlternativeNames(domains.map {
-				.dnsName($0)
-			})
-		}),
-		issuerPrivateKey: .init(key)
-	)
-
-	return CertificateData(domains: domains, certificate: cert, isSelfSigned: true)
 }
